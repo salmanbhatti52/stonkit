@@ -1,0 +1,42 @@
+class Assets {
+  static const String defaultImage = 'assets/images/default-img.jpg';
+  static const String stonkItLogo = 'assets/images/stonk-it.png';
+
+  static const String stonkItImg = 'assets/images/stonk-it-img.png';
+  static const String stonkItHz = 'assets/images/stonk-it-hz.png';
+  static const String email = 'assets/images/email.svg';
+  static const String lock = 'assets/images/lock.svg';
+  static const String arrowLeft = 'assets/images/arrow-left.svg';
+  static const String eyeSlash = 'assets/images/eye-slash.svg';
+  static const String rocketActive = 'assets/images/rocket-active.svg';
+  static const String rocketDim = 'assets/images/rocket-dim.svg';
+  static const String filter = 'assets/images/filter.svg';
+  static const String filterActive = 'assets/images/filter-fill.svg';
+  static const String bookmark = 'assets/images/bookmark.svg';
+  static const String bookmarkActive = 'assets/images/bookmark-fill.svg';
+  static const String profileIcon = 'assets/images/profile-circle.svg';
+  static const String profileAvatar = 'assets/images/profile-circle.png';
+  static const String tag = 'assets/images/tag.svg';
+  static const String fmgLtd = 'assets/images/fmg-ltd.png';
+  static const String swipeLeft = 'assets/images/swipe-left.png';
+  static const String swipeRight = 'assets/images/swipe-right.png';
+  static const String chart = 'assets/images/chart.png';
+  static const String tech = 'assets/images/tech.svg';
+  static const String finance = 'assets/images/finance.svg';
+  static const String rocket = 'assets/images/rocket.svg';
+  static const String chat = 'assets/images/chat.svg';
+  static const String factory = 'assets/images/factory.svg';
+  static const String consumerDisc = 'assets/images/consumer-disc.svg';
+  static const String electric = 'assets/images/elec.svg';
+  static const String material = 'assets/images/material.svg';
+  static const String consumerStaple = 'assets/images/consumer-staple.svg';
+  static const String realEstate = 'assets/images/real-estate.svg';
+  static const String healthCare = 'assets/images/health-care.svg';
+  static const String energy = 'assets/images/energy.svg';
+  static const String setting = 'assets/images/setting.svg';
+  static const String logout = 'assets/images/logout.svg';
+  static const String trash = 'assets/images/trash.svg';
+  static const String arrowRight = 'assets/images/arrow-right.svg';
+  static const String delete = 'assets/images/delete.svg';
+  static const String close = 'assets/images/close-circle.svg';
+}
