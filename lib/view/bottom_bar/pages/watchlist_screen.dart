@@ -9,6 +9,7 @@ import 'package:stonk_it/view/bottom_bar/pages/home_screen.dart';
 
 import '../../../resources/components/app_bar_md.dart';
 import '../../../resources/components/asset_image_md.dart';
+import '../../../view_model/bottom_bar_model/watchlist_view_model.dart';
 import '../../settings/pages/profile_screen.dart';
 
 class WatchlistScreen extends StatefulWidget {
@@ -19,19 +20,29 @@ class WatchlistScreen extends StatefulWidget {
 }
 
 class _WatchlistScreenState extends State<WatchlistScreen> {
-  // late WatchListViewModel _viewModel;
+  late WatchListViewModel _viewModel;
   late AppData _appData;
+  final FocusNode _focusNode = FocusNode();
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    // _viewModel = Provider.of<WatchListViewModel>(context, listen: false);
+    _viewModel = Provider.of<WatchListViewModel>(context, listen: false);
     _appData = Provider.of<AppData>(context, listen: false);
     init();
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (_focusNode.hasFocus) {
+      _viewModel.getLikedTickers(context);
+    }
   }
 
   init() {
     _appData.loadWatchlistData();
+    _viewModel.getLikedTickers(context);
   }
 
   @override
@@ -201,8 +212,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                                 ),
                                               ),
                                               DataCell(
-                                                data!['changePercentage']
-                                                    .toString(),
+                                                "${(data!['changePercentage']).toStringAsFixed(1)}%",
                                                 kTwelveRegular050B15Poppins
                                                     .copyWith(
                                                   color:
@@ -214,13 +224,14 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                                 ),
                                               ),
                                               DataCell(
-                                                data['price'].toString(),
+                                                '\$${(data['price']).toString()}',
                                                 kTwelveRegular050B15Poppins
                                                     .copyWith(
                                                   color: AppColors.darkGray,
                                                 ),
                                               ),
-                                              LikedCell('10'),
+                                              LikedCell(
+                                                  data['liked'].toString()),
                                             ],
                                           ),
                                         ),

@@ -87,6 +87,11 @@ class AppData with ChangeNotifier {
     }
   }
 
+  setWatchlist(List<Map<String, dynamic>?> value) {
+    _watchlist = value;
+    notifyListeners();
+  }
+
   Future<bool> saveWatchlistData() async {
     try {
       // SharedPreferences preferences = await SharedPreferences.getInstance();

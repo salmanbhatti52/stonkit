@@ -45,8 +45,18 @@ class BottomNavRepo {
         url: AppUrls.likeTicker, data: data);
   }
 
+  Future dislikeTicker(dynamic data) async {
+    return await _baseApiServices.fetchPostApiResponse(
+        url: AppUrls.dislikeTicker, data: data);
+  }
+
   Future getLikedTickers(dynamic data) async {
     return await _baseApiServices.fetchPostApiResponse(
         url: AppUrls.getLikedTickers, data: data);
+  }
+
+  Future getDislikedTickers(dynamic data) async {
+    return await _baseApiServices.fetchPostApiResponse(
+        url: AppUrls.getDislikedTickers, data: data);
   }
 }

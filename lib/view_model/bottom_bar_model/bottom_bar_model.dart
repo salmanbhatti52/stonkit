@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:stonk_it/view_model/bottom_bar_model/watchlist_view_model.dart';
 
 import '../../storage/user_session.dart';
 import '../../view/bottom_bar/pages/filter_screen.dart';
@@ -13,6 +14,7 @@ class BottomBarModel with ChangeNotifier {
   late UserSession _userSession;
   late int _currentIndex;
   int get currentIndex => _currentIndex;
+  final WatchListViewModel _watchListViewModel = WatchListViewModel();
 
   final List<Widget> _pages = [
     WatchlistScreen(),
@@ -26,7 +28,10 @@ class BottomBarModel with ChangeNotifier {
     _currentIndex = index;
   }
 
-  void onBottomNavTap(int index) {
+  void onBottomNavTap(int index, BuildContext context) {
+    if (index == 0) {
+      _watchListViewModel.getLikedTickers(context);
+    }
     _currentIndex = index;
     notifyListeners();
   }

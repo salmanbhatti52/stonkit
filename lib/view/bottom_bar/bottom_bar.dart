@@ -62,7 +62,7 @@ class _BottomBarMdState extends State<BottomBarMd> {
                   color: Colors.white,
                   child: BottomNavigationBar(
                     onTap: (value) {
-                      object.onBottomNavTap(value);
+                      object.onBottomNavTap(value, context);
                       object.init(context);
                     },
                     currentIndex: object.currentIndex,
@@ -110,7 +110,7 @@ class _BottomBarMdState extends State<BottomBarMd> {
                   left: width * 0.5 - 26,
                   child: SvgAssetImageMd(
                     onTap: () {
-                      object.onBottomNavTap(1);
+                      object.onBottomNavTap(1, context);
                     },
                     name: object.currentIndex == 1
                         ? Assets.rocketActive

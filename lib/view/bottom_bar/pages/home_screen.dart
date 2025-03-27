@@ -122,7 +122,26 @@ class _HomeScreenState extends State<HomeScreen> {
                                             'value is empty: $companyStockQuote');
                                       }
                                     }
-
+                                    if (direction == CardSwiperDirection.left) {
+                                      if (companyStockQuote != null) {
+                                        debugPrint(
+                                            'value is not empty: $companyStockQuote');
+                                        // bool result = await _appData
+                                        //     .addToWatchlistIfNotExists(
+                                        //     companyStockQuote, context);
+                                        // if (result) {
+                                        //   Utils.successSnackBar(context,
+                                        //       'Stock added to your watchlist.');
+                                        await _viewModel.dislikeThisTicker(
+                                            context, companyStockQuote);
+                                        // }
+                                      } else {
+                                        // Utils.errorSnackBar(
+                                        //     context, 'Payment Required.');
+                                        debugPrint(
+                                            'value is empty: $companyStockQuote');
+                                      }
+                                    }
                                     _viewModel.setCurrentTopIndex(currentIndex);
                                     _viewModel.updateCards(
                                         context); // Update card colors after swipe
@@ -138,12 +157,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                     //   debugPrint('abc');
                                     await _viewModel.fetchCompanyStockPrice(
                                         ticker, context);
-                                    // _viewModel.fetchHistoricalStockPrice(
-                                    //     companyData['ticker'], context);
-                                    // _viewModel.fetchHistoricalSectorPerformance(
-                                    //     companyData['exchange'], context);
-                                    // _viewModel.fetchCompanyDividends(
-                                    //     companyData['ticker'], context);
+                                    _viewModel.fetchHistoricalStockPrice(
+                                        companyData['ticker'], context);
+                                    _viewModel.fetchHistoricalSectorPerformance(
+                                        companyData['exchange'], context);
+                                    _viewModel.fetchCompanyDividends(
+                                        companyData['ticker'], context);
                                     // }
                                     _viewModel
                                         .fetchHistoricalStockPriceForChart(
@@ -508,15 +527,12 @@ class FirstCardWidgetState extends State<FirstCardWidget> {
                                       onTap: () {
                                         _homeViewModel.setSelectedTimeFrame(
                                             _homeViewModel.timeFrames[index]);
-                                        // _homeViewModel
-                                        //     .fetchHistoricalStockPrice(
-                                        //         widget.ticker!, context);
-                                        // _homeViewModel
-                                        //     .fetchHistoricalSectorPerformance(
-                                        //         widget.exchange, context);
                                         _homeViewModel
-                                            .fetchHistoricalStockPriceForChart(
+                                            .fetchHistoricalStockPrice(
                                                 widget.ticker!, context);
+                                        _homeViewModel
+                                            .fetchHistoricalSectorPerformance(
+                                                widget.exchange, context);
                                       },
                                       child: Container(
                                         width: 30,
@@ -676,177 +692,197 @@ class FirstCardWidgetState extends State<FirstCardWidget> {
                               SizedBox(
                                 height: 10,
                               ),
+
                               SizedBox(
                                 height: height * 0.28,
-                                child: _homeViewModel.chartSpots == null ||
-                                        _homeViewModel.monthLabels == null ||
-                                        _homeViewModel.minY == null ||
-                                        _homeViewModel.maxY == null
+                                child: _homeViewModel.isFetchingChart == true
                                     ? Center(child: CircularProgressIndicator())
-                                    : Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: LineChart(
-                                          LineChartData(
-                                            lineBarsData: [
-                                              LineChartBarData(
-                                                spots:
-                                                    _homeViewModel.chartSpots!,
-                                                isCurved: true,
-                                                color: AppColors.primary,
-                                                dotData: FlDotData(show: false),
-                                                belowBarData: BarAreaData(
-                                                  show: true,
-                                                  color: Colors.blue
-                                                      .withOpacity(0.2),
-                                                ),
-                                              ),
-                                            ],
-                                            minY: _homeViewModel.minY!,
-                                            maxY: _homeViewModel.maxY!,
-                                            titlesData: FlTitlesData(
-                                              bottomTitles: AxisTitles(
-                                                sideTitles: SideTitles(
-                                                  showTitles: true,
-                                                  getTitlesWidget:
-                                                      (value, meta) {
-                                                    if (_homeViewModel
-                                                                .monthLabels ==
-                                                            null ||
-                                                        _homeViewModel
-                                                            .monthLabels!
-                                                            .isEmpty ||
-                                                        _homeViewModel
-                                                                .chartSpots ==
-                                                            null) {
-                                                      return const SizedBox
-                                                          .shrink();
-                                                    }
+                                    : _homeViewModel.isFetchingChart == false &&
+                                            _homeViewModel.errorMsgForChart !=
+                                                ''
+                                        ? Center(
+                                            child: Text(
+                                              '${_homeViewModel.errorMsgForChart} for this stock',
+                                            ),
+                                          )
+                                        : Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: LineChart(
+                                              LineChartData(
+                                                lineBarsData: [
+                                                  LineChartBarData(
+                                                    spots: _homeViewModel
+                                                        .chartSpots!,
+                                                    isCurved: true,
+                                                    color: AppColors.primary,
+                                                    dotData:
+                                                        FlDotData(show: false),
+                                                    belowBarData: BarAreaData(
+                                                      show: true,
+                                                      color: Colors.blue
+                                                          .withOpacity(0.2),
+                                                    ),
+                                                  ),
+                                                ],
+                                                minY: _homeViewModel.minY!,
+                                                maxY: _homeViewModel.maxY!,
+                                                titlesData: FlTitlesData(
+                                                  bottomTitles: AxisTitles(
+                                                    sideTitles: SideTitles(
+                                                      showTitles: true,
+                                                      getTitlesWidget:
+                                                          (value, meta) {
+                                                        if (_homeViewModel
+                                                                    .monthLabels ==
+                                                                null ||
+                                                            _homeViewModel
+                                                                .monthLabels!
+                                                                .isEmpty ||
+                                                            _homeViewModel
+                                                                    .chartSpots ==
+                                                                null) {
+                                                          return const SizedBox
+                                                              .shrink();
+                                                        }
 
-                                                    final totalPoints =
-                                                        _homeViewModel
-                                                            .chartSpots!.length
-                                                            .toDouble();
-                                                    final numMonths =
-                                                        _homeViewModel
-                                                            .monthLabels!
-                                                            .length;
-
-                                                    final monthPositions =
-                                                        <double>[];
-                                                    for (int i = 0;
-                                                        i < numMonths;
-                                                        i++) {
-                                                      final position =
-                                                          (i * totalPoints) /
-                                                              (numMonths - 1);
-                                                      monthPositions
-                                                          .add(position);
-                                                    }
-
-                                                    int closestIndex = 0;
-                                                    double minDistance =
-                                                        double.infinity;
-                                                    for (int i = 0;
-                                                        i <
-                                                            monthPositions
+                                                        final totalPoints =
+                                                            _homeViewModel
+                                                                .chartSpots!
+                                                                .length
+                                                                .toDouble();
+                                                        final numMonths =
+                                                            _homeViewModel
+                                                                .monthLabels!
                                                                 .length;
-                                                        i++) {
-                                                      final distance = (value -
-                                                              monthPositions[i])
-                                                          .abs();
-                                                      if (distance <
-                                                          minDistance) {
-                                                        minDistance = distance;
-                                                        closestIndex = i;
-                                                      }
-                                                    }
 
-                                                    if (closestIndex < 0 ||
-                                                        closestIndex >=
-                                                            numMonths) {
-                                                      return const SizedBox
-                                                          .shrink();
-                                                    }
+                                                        final monthPositions =
+                                                            <double>[];
+                                                        for (int i = 0;
+                                                            i < numMonths;
+                                                            i++) {
+                                                          final position = (i *
+                                                                  totalPoints) /
+                                                              (numMonths - 1);
+                                                          monthPositions
+                                                              .add(position);
+                                                        }
 
-                                                    return Padding(
-                                                      padding:
-                                                          const EdgeInsets.only(
-                                                              top: 8.0),
-                                                      child: Transform.rotate(
-                                                        angle: -45 *
-                                                            3.14159 /
-                                                            180, // Rotate 45 degrees
-                                                        child: Text(
-                                                          _homeViewModel
-                                                                  .monthLabels![
-                                                              closestIndex],
+                                                        int closestIndex = 0;
+                                                        double minDistance =
+                                                            double.infinity;
+                                                        for (int i = 0;
+                                                            i <
+                                                                monthPositions
+                                                                    .length;
+                                                            i++) {
+                                                          final distance = (value -
+                                                                  monthPositions[
+                                                                      i])
+                                                              .abs();
+                                                          if (distance <
+                                                              minDistance) {
+                                                            minDistance =
+                                                                distance;
+                                                            closestIndex = i;
+                                                          }
+                                                        }
+
+                                                        if (closestIndex < 0 ||
+                                                            closestIndex >=
+                                                                numMonths) {
+                                                          return const SizedBox
+                                                              .shrink();
+                                                        }
+
+                                                        return Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .only(
+                                                                  top: 8.0),
+                                                          child:
+                                                              Transform.rotate(
+                                                            angle: -45 *
+                                                                3.14159 /
+                                                                180, // Rotate 45 degrees
+                                                            child: Text(
+                                                              _homeViewModel
+                                                                      .monthLabels![
+                                                                  closestIndex],
+                                                              style: const TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: Colors
+                                                                      .grey),
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
+                                                      reservedSize: 40,
+                                                      interval: (_homeViewModel
+                                                                  .chartSpots!
+                                                                  .length /
+                                                              (_homeViewModel
+                                                                      .monthLabels!
+                                                                      .length -
+                                                                  1))
+                                                          .ceilToDouble(),
+                                                    ),
+                                                  ),
+                                                  leftTitles: AxisTitles(
+                                                    sideTitles: SideTitles(
+                                                      showTitles: true,
+                                                      getTitlesWidget:
+                                                          (value, meta) {
+                                                        return Text(
+                                                          value
+                                                              .toInt()
+                                                              .toString(),
                                                           style:
                                                               const TextStyle(
                                                                   fontSize: 12,
                                                                   color: Colors
                                                                       .grey),
-                                                        ),
-                                                      ),
+                                                        );
+                                                      },
+                                                      reservedSize: 40,
+                                                      interval: _homeViewModel
+                                                          .calculateYInterval(
+                                                              _homeViewModel
+                                                                  .minY!,
+                                                              _homeViewModel
+                                                                  .maxY!),
+                                                    ),
+                                                  ),
+                                                  topTitles: const AxisTitles(
+                                                      sideTitles: SideTitles(
+                                                          showTitles: false)),
+                                                  rightTitles: const AxisTitles(
+                                                      sideTitles: SideTitles(
+                                                          showTitles: false)),
+                                                ),
+                                                gridData: FlGridData(
+                                                  show: true,
+                                                  drawVerticalLine: false,
+                                                  horizontalInterval:
+                                                      _homeViewModel
+                                                          .calculateYInterval(
+                                                              _homeViewModel
+                                                                  .minY!,
+                                                              _homeViewModel
+                                                                  .maxY!),
+                                                  getDrawingHorizontalLine:
+                                                      (value) {
+                                                    return FlLine(
+                                                      color: Colors.grey
+                                                          .withOpacity(0.2),
+                                                      strokeWidth: 0,
                                                     );
                                                   },
-                                                  reservedSize: 40,
-                                                  interval: (_homeViewModel
-                                                              .chartSpots!
-                                                              .length /
-                                                          (_homeViewModel
-                                                                  .monthLabels!
-                                                                  .length -
-                                                              1))
-                                                      .ceilToDouble(),
                                                 ),
+                                                borderData:
+                                                    FlBorderData(show: false),
                                               ),
-                                              leftTitles: AxisTitles(
-                                                sideTitles: SideTitles(
-                                                  showTitles: true,
-                                                  getTitlesWidget:
-                                                      (value, meta) {
-                                                    return Text(
-                                                      value.toInt().toString(),
-                                                      style: const TextStyle(
-                                                          fontSize: 12,
-                                                          color: Colors.grey),
-                                                    );
-                                                  },
-                                                  reservedSize: 40,
-                                                  interval: _homeViewModel
-                                                      .calculateYInterval(
-                                                          _homeViewModel.minY!,
-                                                          _homeViewModel.maxY!),
-                                                ),
-                                              ),
-                                              topTitles: const AxisTitles(
-                                                  sideTitles: SideTitles(
-                                                      showTitles: false)),
-                                              rightTitles: const AxisTitles(
-                                                  sideTitles: SideTitles(
-                                                      showTitles: false)),
                                             ),
-                                            gridData: FlGridData(
-                                              show: true,
-                                              drawVerticalLine: false,
-                                              horizontalInterval: _homeViewModel
-                                                  .calculateYInterval(
-                                                      _homeViewModel.minY!,
-                                                      _homeViewModel.maxY!),
-                                              getDrawingHorizontalLine:
-                                                  (value) {
-                                                return FlLine(
-                                                  color: Colors.grey
-                                                      .withOpacity(0.2),
-                                                  strokeWidth: 0,
-                                                );
-                                              },
-                                            ),
-                                            borderData:
-                                                FlBorderData(show: false),
                                           ),
-                                        ),
-                                      ),
                               ),
                               SizedBox(),
                               // AssetsImageMd(

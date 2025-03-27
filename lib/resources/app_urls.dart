@@ -4,7 +4,8 @@ class AppUrls {
   static const imgBaseUrl =
       'https://slategrey-cormorant-857845.hostingersite.com/public/';
   static const apiBaseUrlOfFMP = 'https://financialmodelingprep.com/stable/';
-  static const apiKeyOfFMP = 'gq6cyoIoSsnVKypgjH1XfJBFot5jaxU6';
+  // static const apiKeyOfFMP = 'gq6cyoIoSsnVKypgjH1XfJBFot5jaxU6'; //client
+  static const apiKeyOfFMP = 'CDM2GCSG3rpN6S48N472rShgYZLmBRvb'; //Myself
 
   static const signupWithApp = '${apiBaseUrl}user_signup';
   static const loginWithApp = '${apiBaseUrl}users_login';
@@ -14,7 +15,9 @@ class AppUrls {
   static const changePassword = '${apiBaseUrl}change_password';
   static const deleteAccount = '${apiBaseUrl}delete_account';
   static const likeTicker = '${apiBaseUrl}like_ticker';
+  static const dislikeTicker = '${apiBaseUrl}dislike_ticker';
   static const getLikedTickers = '${apiBaseUrl}get_liked_ticker';
+  static const getDislikedTickers = '${apiBaseUrl}get_dislike_ticker';
 
   // home Urls
   static const stockScreener =

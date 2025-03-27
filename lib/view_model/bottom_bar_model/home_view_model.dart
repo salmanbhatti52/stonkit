@@ -55,6 +55,8 @@ class HomeViewModel extends ChangeNotifier {
   double? get minY => _minY;
   double? _maxY;
   double? get maxY => _maxY;
+  String? _errorMsgForChart = '';
+  String? get errorMsgForChart => _errorMsgForChart;
 
   Map<String, String> get selectedTimeRangeData {
     final now = DateTime.now(); // Current date and time
@@ -118,9 +120,9 @@ class HomeViewModel extends ChangeNotifier {
       await fetchTickersAndCompanies(context);
     }
     await fetchCompanyStockPrice(_companies[0]['ticker'], context);
-    // fetchHistoricalStockPrice(_companies[0]['ticker'], context);
-    // fetchHistoricalSectorPerformance(_companies[0]['exchange'], context);
-    // fetchCompanyDividends(_companies[0]['ticker'], context);
+    fetchHistoricalStockPrice(_companies[0]['ticker'], context);
+    fetchHistoricalSectorPerformance(_companies[0]['exchange'], context);
+    fetchCompanyDividends(_companies[0]['ticker'], context);
     fetchHistoricalStockPriceForChart(_companies[0]['ticker'], context);
   }
 
@@ -283,25 +285,51 @@ class HomeViewModel extends ChangeNotifier {
       debugPrint('Like Ticker Data: $data');
       final response = await _repo.likeTicker(data);
       debugPrint('Like Ticker Response: $response');
-      Utils.successSnackBar(context, 'Ticker added to watchlist');
+      // Utils.successSnackBar(context, 'Ticker added to watchlist');
     } catch (e) {
       // Utils.errorSnackBar(context, e.toString());
       debugPrint('Like Ticker Error: $e');
     }
   }
 
+  Future dislikeThisTicker(BuildContext context, Map company) async {
+    try {
+      final data = {
+        'user_id': _userSession.userId,
+        'ticker_name':
+            '${company['symbol']}.${company['exchange']}', // e.g., AAPL.NASDAQ
+      };
+      debugPrint('Dislike Ticker Data: $data');
+      final response = await _repo.dislikeTicker(data);
+      debugPrint('DisLike Ticker Response: $response');
+    } catch (e) {
+      // Utils.errorSnackBar(context, e.toString());
+      debugPrint('Dislike Ticker Error: $e');
+    }
+  }
+
+  resetChartData() {
+    _isFetchingChart = true;
+    _historicalStockDataForChart = [];
+    _chartSpots = null;
+    _monthLabels = null;
+    _minY = null;
+    _maxY = null;
+    notifyListeners();
+  }
+
   Future fetchHistoricalStockPriceForChart(
       String ticker, BuildContext context) async {
+    resetChartData();
     final now = DateTime.now();
     final toDate =
         now.toString().split(' ')[0]; // YYYY-MM-DD (e.g., 2025-03-25)
     final fromDate =
-        now.subtract(Duration(days: 135)); // Approx 5 months (30 days * 5)
+        now.subtract(Duration(days: 150)); // Approx 5 months (30 days * 5)
     final fromDateString = fromDate.toString().split(' ')[0];
     debugPrint('fromDate: $fromDateString, toDate: $toDate');
     debugPrint('ticker: $ticker');
     try {
-      _isFetchingChart = true;
       String param = '&symbol=$ticker&from=$fromDateString&to=$toDate';
       _historicalStockDataForChart =
           await _repo.fetchHistoricalStockPrice(param);
@@ -324,7 +352,7 @@ class HomeViewModel extends ChangeNotifier {
 
       // Get the end date (most recent date) and calculate the start date (150 days ago)
       final endDate = DateTime.parse(reversedHistorical.last['date']);
-      final startDate = endDate.subtract(Duration(days: 135));
+      final startDate = endDate.subtract(Duration(days: 150));
 
       // Generate month labels for the period
       DateTime currentDate = DateTime(startDate.year, startDate.month, 1);
@@ -347,6 +375,8 @@ class HomeViewModel extends ChangeNotifier {
         if (price > maxPrice) maxPrice = price;
       }
 
+      _isFetchingChart = false;
+      _errorMsgForChart = '';
       // Add padding to minY and maxY
       final priceRange = maxPrice - minPrice;
       final padding = priceRange * 0.05;
@@ -361,10 +391,13 @@ class HomeViewModel extends ChangeNotifier {
       _minY = calculatedMinY;
       _maxY = calculatedMaxY;
     } catch (e) {
+      _isFetchingChart = false;
+      _errorMsgForChart = e.toString();
       Utils.errorSnackBar(context, e.toString());
+      debugPrint('Error fetching historical stock data for chart: $e');
     }
-    _isFetchingChart = false;
     notifyListeners();
+
     // debugPrint('Historical Stock Data for chart: $_historicalStockDataForChart');
   }
 
