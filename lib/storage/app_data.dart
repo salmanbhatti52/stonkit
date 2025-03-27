@@ -46,17 +46,17 @@ class AppData with ChangeNotifier {
   }
 
   Future<void> loadWatchlistData() async {
-    try {
-      SharedPreferences preference = await SharedPreferences.getInstance();
-      String? jsonString = preference.getString('watchlist');
-      if (jsonString != null) {
-        _watchlist =
-            (jsonDecode(jsonString) as List).cast<Map<String, dynamic>?>();
-        notifyListeners();
-      }
-    } catch (e) {
-      print('Error loading watchlist: $e');
-    }
+    // try {
+    // SharedPreferences preference = await SharedPreferences.getInstance();
+    // String? jsonString = preference.getString('watchlist');
+    // if (jsonString != null) {
+    //   _watchlist =
+    //       (jsonDecode(jsonString) as List).cast<Map<String, dynamic>?>();
+    //   notifyListeners();
+    // }
+    // } catch (e) {
+    //   print('Error loading watchlist: $e');
+    // }
   }
 
   Future<bool> addToWatchlistIfNotExists(
@@ -89,9 +89,9 @@ class AppData with ChangeNotifier {
 
   Future<bool> saveWatchlistData() async {
     try {
-      SharedPreferences preferences = await SharedPreferences.getInstance();
-      String jsonString = jsonEncode(watchlist);
-      await preferences.setString('watchlist', jsonString);
+      // SharedPreferences preferences = await SharedPreferences.getInstance();
+      // String jsonString = jsonEncode(watchlist);
+      // await preferences.setString('watchlist', jsonString);
       _watchlist = watchlist;
       notifyListeners();
       return true;

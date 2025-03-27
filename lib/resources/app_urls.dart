@@ -13,6 +13,8 @@ class AppUrls {
   static const setNewPassword = '${apiBaseUrl}update_password';
   static const changePassword = '${apiBaseUrl}change_password';
   static const deleteAccount = '${apiBaseUrl}delete_account';
+  static const likeTicker = '${apiBaseUrl}like_ticker';
+  static const getLikedTickers = '${apiBaseUrl}get_liked_ticker';
 
   // home Urls
   static const stockScreener =
@@ -21,4 +23,10 @@ class AppUrls {
   static const companyProfile = '${apiBaseUrlOfFMP}profile?apikey=$apiKeyOfFMP';
   static const companyStockPrice =
       '${apiBaseUrlOfFMP}quote?apikey=$apiKeyOfFMP';
+  static const historicalStockPrice =
+      '${apiBaseUrlOfFMP}historical-price-eod/full?apikey=$apiKeyOfFMP';
+  static const historicalSectorPerformance =
+      '${apiBaseUrlOfFMP}historical-sector-performance?apikey=$apiKeyOfFMP';
+  static const companyDividends =
+      '${apiBaseUrlOfFMP}dividends?apikey=$apiKeyOfFMP';
 }

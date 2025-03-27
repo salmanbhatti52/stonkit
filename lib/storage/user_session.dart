@@ -73,7 +73,7 @@ class UserSession with ChangeNotifier {
     preferences.remove('homeAlertStatus');
     preferences.remove('watchListAlertStatus');
     preferences.remove('isEmailAlreadyExist');
-
+    preferences.remove('watchlist');
     //if deleting account
     if (delAccount == true) {
       List<String>? savedEmails = [];

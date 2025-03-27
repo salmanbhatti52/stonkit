@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:provider/provider.dart';
@@ -95,27 +96,30 @@ class _HomeScreenState extends State<HomeScreen> {
                                   isLoop: true,
                                   onSwipe: (previousIndex, currentIndex,
                                       direction) async {
+                                    Map companyData =
+                                        _viewModel.companies[currentIndex!];
+                                    Map<String, dynamic>? companyStockQuote =
+                                        _viewModel.companyStockQuote;
                                     if (direction ==
                                         CardSwiperDirection.right) {
-                                      debugPrint(
-                                          '${_viewModel.companyStockQuote}');
-                                      if (_viewModel.companyStockQuote !=
-                                          null) {
+                                      debugPrint('$companyStockQuote');
+                                      if (companyStockQuote != null) {
                                         debugPrint(
-                                            'value is not empty: ${_viewModel.companyStockQuote}');
+                                            'value is not empty: $companyStockQuote');
                                         bool result = await _appData
                                             .addToWatchlistIfNotExists(
-                                                _viewModel.companyStockQuote,
-                                                context);
+                                                companyStockQuote, context);
                                         if (result) {
                                           Utils.successSnackBar(context,
                                               'Stock added to your watchlist.');
+                                          await _viewModel.likeThisTicker(
+                                              context, companyStockQuote);
                                         }
                                       } else {
                                         // Utils.errorSnackBar(
                                         //     context, 'Payment Required.');
                                         debugPrint(
-                                            'value is empty: ${_viewModel.companyStockQuote}');
+                                            'value is empty: $companyStockQuote');
                                       }
                                     }
 
@@ -128,14 +132,22 @@ class _HomeScreenState extends State<HomeScreen> {
                                     //Adding Stock in watchList
 
                                     // _viewModel.resetStockPrice();
-                                    String ticker = _viewModel
-                                        .companies[currentIndex!]['ticker'];
+                                    String ticker = companyData['ticker'];
                                     debugPrint('ticker: $ticker');
-                                    // if (_viewModel.companyStockQuote == null) {
+                                    // if (companyStockQuote == null) {
                                     //   debugPrint('abc');
                                     await _viewModel.fetchCompanyStockPrice(
                                         ticker, context);
+                                    // _viewModel.fetchHistoricalStockPrice(
+                                    //     companyData['ticker'], context);
+                                    // _viewModel.fetchHistoricalSectorPerformance(
+                                    //     companyData['exchange'], context);
+                                    // _viewModel.fetchCompanyDividends(
+                                    //     companyData['ticker'], context);
                                     // }
+                                    _viewModel
+                                        .fetchHistoricalStockPriceForChart(
+                                            companyData['ticker'], context);
 
                                     print(currentIndex);
 
@@ -271,7 +283,6 @@ class FirstCardWidget extends StatefulWidget {
 
 class FirstCardWidgetState extends State<FirstCardWidget> {
   late HomeViewModel _homeViewModel;
-
   @override
   void didChangeDependencies() {
     // TODO: implement didChangeDependencies
@@ -300,7 +311,7 @@ class FirstCardWidgetState extends State<FirstCardWidget> {
         builder: (context, value, child) {
           return _homeViewModel.cardChildIndex == 0
               ? GestureDetector(
-                  onTap: () async {
+                  onTap: () {
                     _homeViewModel.setCardChildIndex(1);
                   },
                   child: Container(
@@ -361,7 +372,7 @@ class FirstCardWidgetState extends State<FirstCardWidget> {
                             textAlign: TextAlign.center,
                             style: kFourteenRegBlackPoppins.copyWith(
                                 color: AppColors.darkGray),
-                            maxLines: 4,
+                            maxLines: 5,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -432,7 +443,7 @@ class FirstCardWidgetState extends State<FirstCardWidget> {
                 )
               : GestureDetector(
                   onTap: () {
-                    _homeViewModel.setCardChildIndex(0);
+                    // _homeViewModel.setCardChildIndex(0);
                   },
                   child: Container(
                     // width: width * 1.0,
@@ -460,7 +471,11 @@ class FirstCardWidgetState extends State<FirstCardWidget> {
                                         ? '\$${value.companyStockQuote?['price']}'
                                         : '\$',
                                     style: kTwentyEightSbGreenPoppins.copyWith(
-                                        color: AppColors.red),
+                                        color: _homeViewModel.stockPerformance
+                                                .toString()
+                                                .startsWith('-')
+                                            ? AppColors.red
+                                            : null),
                                     textAlign: TextAlign.center,
                                   )
                                 : CircularProgressIndicator(
@@ -481,232 +496,392 @@ class FirstCardWidgetState extends State<FirstCardWidget> {
                                   Border.all(color: Colors.black, width: 0.76),
                               borderRadius: BorderRadius.circular(7.55)),
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                  decoration: BoxDecoration(
-                                      color: AppColors.primary,
-                                      borderRadius: BorderRadius.circular(4)),
-                                  width: 30,
-                                  height: 18,
-                                  child: Center(
-                                    child: Text(
-                                      '1D',
-                                      style: kElevenRegWhitePoppins,
-                                      textAlign: TextAlign.center,
+                            children: List.generate(
+                              _homeViewModel.timeFrames.length,
+                              (index) {
+                                bool isSelected =
+                                    _homeViewModel.timeFrames[index] ==
+                                        _homeViewModel.selectedTimeRange;
+                                return Row(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () {
+                                        _homeViewModel.setSelectedTimeFrame(
+                                            _homeViewModel.timeFrames[index]);
+                                        // _homeViewModel
+                                        //     .fetchHistoricalStockPrice(
+                                        //         widget.ticker!, context);
+                                        // _homeViewModel
+                                        //     .fetchHistoricalSectorPerformance(
+                                        //         widget.exchange, context);
+                                        _homeViewModel
+                                            .fetchHistoricalStockPriceForChart(
+                                                widget.ticker!, context);
+                                      },
+                                      child: Container(
+                                        width: 30,
+                                        height: 18,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                            color: isSelected
+                                                ? AppColors.primary
+                                                : Colors.transparent,
+                                            borderRadius: isSelected
+                                                ? BorderRadius.circular(4)
+                                                : null),
+                                        child: Text(
+                                          _homeViewModel.timeFrames[index],
+                                          style: isSelected
+                                              ? kElevenRegWhitePoppins
+                                              : kElevenRegBlackPoppins,
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
                                     ),
-                                  )),
-                              Container(
-                                width: 1,
-                                color: Colors.black,
-                                margin: EdgeInsets.symmetric(
-                                    horizontal: 9, vertical: 4),
-                              ),
-                              Container(
-                                  width: 30,
-                                  height: 18,
-                                  color: Colors.transparent,
-                                  child: Center(
-                                    child: Text(
-                                      '1W',
-                                      style: kElevenRegBlackPoppins,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  )),
-                              Container(
-                                width: 1,
-                                color: Colors.black,
-                                margin: EdgeInsets.symmetric(
-                                    horizontal: 9, vertical: 4),
-                              ),
-                              Container(
-                                  width: 30,
-                                  height: 18,
-                                  color: Colors.transparent,
-                                  child: Center(
-                                    child: Text(
-                                      '1M',
-                                      style: kElevenRegBlackPoppins,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  )),
-                              Container(
-                                width: 1,
-                                color: Colors.black,
-                                margin: EdgeInsets.symmetric(
-                                    horizontal: 9, vertical: 4),
-                              ),
-                              Container(
-                                  width: 30,
-                                  height: 18,
-                                  color: Colors.transparent,
-                                  child: Center(
-                                    child: Text(
-                                      '1Y',
-                                      style: kElevenRegBlackPoppins,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  )),
-                              Container(
-                                width: 1,
-                                color: Colors.black,
-                                margin: EdgeInsets.symmetric(
-                                    horizontal: 9, vertical: 4),
-                              ),
-                              Container(
-                                  width: 30,
-                                  height: 18,
-                                  color: Colors.transparent,
-                                  child: Center(
-                                    child: Text(
-                                      'Max',
-                                      style: kElevenRegBlackPoppins,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  )),
-                            ],
+                                    if (index !=
+                                        _homeViewModel.timeFrames.length - 1)
+                                      Container(
+                                        width: 1,
+                                        color: Colors.black,
+                                        margin: EdgeInsets.symmetric(
+                                            horizontal: 9, vertical: 4),
+                                      ),
+                                  ],
+                                );
+                              },
+                            ),
                           ),
                         ),
                         SizedBox(
                           height: 25,
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              constraints:
-                                  BoxConstraints(minWidth: width * 0.23),
-                              padding: EdgeInsets.symmetric(
-                                  vertical: 9, horizontal: 9),
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(6),
-                                  color: Colors.white,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black26,
-                                      blurRadius: 5,
-                                      spreadRadius: 2,
-                                    )
-                                  ]),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
+                        GestureDetector(
+                          onTap: () {
+                            _homeViewModel.setCardChildIndex(0);
+                          },
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    'FMG \n performance',
-                                    textAlign: TextAlign.center,
-                                    style: kTenRegAEB6B7Poppins.copyWith(
-                                        color: AppColors.color3B3B3B),
+                                  Container(
+                                    constraints:
+                                        BoxConstraints(minWidth: width * 0.23),
+                                    padding: EdgeInsets.symmetric(
+                                        vertical: 9, horizontal: 9),
+                                    decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(6),
+                                        color: Colors.white,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black26,
+                                            blurRadius: 5,
+                                            spreadRadius: 2,
+                                          )
+                                        ]),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          '${widget.ticker} \n performance',
+                                          textAlign: TextAlign.center,
+                                          style: kTenRegAEB6B7Poppins.copyWith(
+                                              color: AppColors.color3B3B3B),
+                                        ),
+                                        SizedBox(
+                                          height: 6,
+                                        ),
+                                        Text(
+                                          '${_homeViewModel.stockPerformance.toStringAsFixed(1)}%',
+                                          style: kTwentyMedRedPoppins,
+                                        )
+                                      ],
+                                    ),
                                   ),
-                                  SizedBox(
-                                    height: 6,
+                                  Container(
+                                    constraints:
+                                        BoxConstraints(minWidth: width * 0.29),
+                                    padding: EdgeInsets.symmetric(
+                                        vertical: 9, horizontal: 9),
+                                    decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(6),
+                                        color: Colors.white,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black26,
+                                            blurRadius: 5,
+                                            spreadRadius: 2,
+                                          )
+                                        ]),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'Materials Sector \n performance',
+                                          textAlign: TextAlign.center,
+                                          style: kTenRegAEB6B7Poppins.copyWith(
+                                              color: AppColors.color3B3B3B),
+                                        ),
+                                        SizedBox(
+                                          height: 6,
+                                        ),
+                                        Text(
+                                          '${_homeViewModel.materialSectorPerformance.toStringAsFixed(1)}%',
+                                          style: kTwentyMedRedPoppins,
+                                        )
+                                      ],
+                                    ),
                                   ),
-                                  Text(
-                                    '-2.5%',
-                                    style: kTwentyMedRedPoppins,
+                                  Container(
+                                    constraints:
+                                        BoxConstraints(minWidth: width * 0.23),
+                                    padding: EdgeInsets.symmetric(
+                                        vertical: 9, horizontal: 9),
+                                    decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(6),
+                                        color: Colors.white,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black26,
+                                            blurRadius: 5,
+                                            spreadRadius: 2,
+                                          )
+                                        ]),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'Dividend \n Yield',
+                                          textAlign: TextAlign.center,
+                                          style: kTenRegAEB6B7Poppins.copyWith(
+                                              color: AppColors.color3B3B3B),
+                                        ),
+                                        SizedBox(
+                                          height: 6,
+                                        ),
+                                        Text(
+                                          '${_homeViewModel.dividendYield.toStringAsFixed(1)}%',
+                                          style: kTwentyMedRedPoppins.copyWith(
+                                              color: AppColors.green),
+                                        )
+                                      ],
+                                    ),
                                   )
                                 ],
                               ),
-                            ),
-                            Container(
-                              constraints:
-                                  BoxConstraints(minWidth: width * 0.29),
-                              padding: EdgeInsets.symmetric(
-                                  vertical: 9, horizontal: 9),
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(6),
-                                  color: Colors.white,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black26,
-                                      blurRadius: 5,
-                                      spreadRadius: 2,
-                                    )
-                                  ]),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'Materials Sector \n performance',
-                                    textAlign: TextAlign.center,
-                                    style: kTenRegAEB6B7Poppins.copyWith(
-                                        color: AppColors.color3B3B3B),
-                                  ),
-                                  SizedBox(
-                                    height: 6,
-                                  ),
-                                  Text(
-                                    '-2.5%',
-                                    style: kTwentyMedRedPoppins,
-                                  )
-                                ],
+                              SizedBox(
+                                height: 10,
                               ),
-                            ),
-                            Container(
-                              constraints:
-                                  BoxConstraints(minWidth: width * 0.23),
-                              padding: EdgeInsets.symmetric(
-                                  vertical: 9, horizontal: 9),
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(6),
-                                  color: Colors.white,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black26,
-                                      blurRadius: 5,
-                                      spreadRadius: 2,
-                                    )
-                                  ]),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'Dividend \n Yield',
-                                    textAlign: TextAlign.center,
-                                    style: kTenRegAEB6B7Poppins.copyWith(
-                                        color: AppColors.color3B3B3B),
-                                  ),
-                                  SizedBox(
-                                    height: 6,
-                                  ),
-                                  Text(
-                                    '7.5%',
-                                    style: kTwentyMedRedPoppins.copyWith(
-                                        color: AppColors.green),
-                                  )
-                                ],
+                              SizedBox(
+                                height: height * 0.28,
+                                child: _homeViewModel.chartSpots == null ||
+                                        _homeViewModel.monthLabels == null ||
+                                        _homeViewModel.minY == null ||
+                                        _homeViewModel.maxY == null
+                                    ? Center(child: CircularProgressIndicator())
+                                    : Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: LineChart(
+                                          LineChartData(
+                                            lineBarsData: [
+                                              LineChartBarData(
+                                                spots:
+                                                    _homeViewModel.chartSpots!,
+                                                isCurved: true,
+                                                color: AppColors.primary,
+                                                dotData: FlDotData(show: false),
+                                                belowBarData: BarAreaData(
+                                                  show: true,
+                                                  color: Colors.blue
+                                                      .withOpacity(0.2),
+                                                ),
+                                              ),
+                                            ],
+                                            minY: _homeViewModel.minY!,
+                                            maxY: _homeViewModel.maxY!,
+                                            titlesData: FlTitlesData(
+                                              bottomTitles: AxisTitles(
+                                                sideTitles: SideTitles(
+                                                  showTitles: true,
+                                                  getTitlesWidget:
+                                                      (value, meta) {
+                                                    if (_homeViewModel
+                                                                .monthLabels ==
+                                                            null ||
+                                                        _homeViewModel
+                                                            .monthLabels!
+                                                            .isEmpty ||
+                                                        _homeViewModel
+                                                                .chartSpots ==
+                                                            null) {
+                                                      return const SizedBox
+                                                          .shrink();
+                                                    }
+
+                                                    final totalPoints =
+                                                        _homeViewModel
+                                                            .chartSpots!.length
+                                                            .toDouble();
+                                                    final numMonths =
+                                                        _homeViewModel
+                                                            .monthLabels!
+                                                            .length;
+
+                                                    final monthPositions =
+                                                        <double>[];
+                                                    for (int i = 0;
+                                                        i < numMonths;
+                                                        i++) {
+                                                      final position =
+                                                          (i * totalPoints) /
+                                                              (numMonths - 1);
+                                                      monthPositions
+                                                          .add(position);
+                                                    }
+
+                                                    int closestIndex = 0;
+                                                    double minDistance =
+                                                        double.infinity;
+                                                    for (int i = 0;
+                                                        i <
+                                                            monthPositions
+                                                                .length;
+                                                        i++) {
+                                                      final distance = (value -
+                                                              monthPositions[i])
+                                                          .abs();
+                                                      if (distance <
+                                                          minDistance) {
+                                                        minDistance = distance;
+                                                        closestIndex = i;
+                                                      }
+                                                    }
+
+                                                    if (closestIndex < 0 ||
+                                                        closestIndex >=
+                                                            numMonths) {
+                                                      return const SizedBox
+                                                          .shrink();
+                                                    }
+
+                                                    return Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              top: 8.0),
+                                                      child: Transform.rotate(
+                                                        angle: -45 *
+                                                            3.14159 /
+                                                            180, // Rotate 45 degrees
+                                                        child: Text(
+                                                          _homeViewModel
+                                                                  .monthLabels![
+                                                              closestIndex],
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: Colors
+                                                                      .grey),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                  reservedSize: 40,
+                                                  interval: (_homeViewModel
+                                                              .chartSpots!
+                                                              .length /
+                                                          (_homeViewModel
+                                                                  .monthLabels!
+                                                                  .length -
+                                                              1))
+                                                      .ceilToDouble(),
+                                                ),
+                                              ),
+                                              leftTitles: AxisTitles(
+                                                sideTitles: SideTitles(
+                                                  showTitles: true,
+                                                  getTitlesWidget:
+                                                      (value, meta) {
+                                                    return Text(
+                                                      value.toInt().toString(),
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors.grey),
+                                                    );
+                                                  },
+                                                  reservedSize: 40,
+                                                  interval: _homeViewModel
+                                                      .calculateYInterval(
+                                                          _homeViewModel.minY!,
+                                                          _homeViewModel.maxY!),
+                                                ),
+                                              ),
+                                              topTitles: const AxisTitles(
+                                                  sideTitles: SideTitles(
+                                                      showTitles: false)),
+                                              rightTitles: const AxisTitles(
+                                                  sideTitles: SideTitles(
+                                                      showTitles: false)),
+                                            ),
+                                            gridData: FlGridData(
+                                              show: true,
+                                              drawVerticalLine: false,
+                                              horizontalInterval: _homeViewModel
+                                                  .calculateYInterval(
+                                                      _homeViewModel.minY!,
+                                                      _homeViewModel.maxY!),
+                                              getDrawingHorizontalLine:
+                                                  (value) {
+                                                return FlLine(
+                                                  color: Colors.grey
+                                                      .withOpacity(0.2),
+                                                  strokeWidth: 0,
+                                                );
+                                              },
+                                            ),
+                                            borderData:
+                                                FlBorderData(show: false),
+                                          ),
+                                        ),
+                                      ),
                               ),
-                            )
-                          ],
-                        ),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        AssetsImageMd(
-                            height: height * 0.265, name: Assets.chart),
-                        SizedBox(
-                          height: 15,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(
-                            2,
-                            (index) => GestureDetector(
-                              onTap: () {
-                                _homeViewModel.setCardChildIndex(index);
-                              },
-                              child: Container(
-                                width: 14.0,
-                                height: 14.0,
-                                margin: EdgeInsets.symmetric(horizontal: 4.0),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: _homeViewModel.cardChildIndex == index
-                                      ? AppColors.primary
-                                      : AppColors.colorD9D9D9,
+                              SizedBox(),
+                              // AssetsImageMd(
+                              //     height: height * 0.265, name: Assets.chart),
+                              // SizedBox(
+                              //   height: 12.2,
+                              // ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(
+                                  2,
+                                  (index) => GestureDetector(
+                                    onTap: () {
+                                      _homeViewModel.setCardChildIndex(index);
+                                    },
+                                    child: Container(
+                                      width: 14.0,
+                                      height: 14.0,
+                                      margin:
+                                          EdgeInsets.symmetric(horizontal: 4.0),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: _homeViewModel.cardChildIndex ==
+                                                index
+                                            ? AppColors.primary
+                                            : AppColors.colorD9D9D9,
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                              // SizedBox(
+                              //   height: 15,
+                              // )
+                            ],
                           ),
                         )
                       ],
