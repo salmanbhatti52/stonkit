@@ -2,7 +2,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:stonk_it/api_repository/bottom_nav_repo.dart';
-import 'package:stonk_it/storage/app_data.dart';
 import 'package:stonk_it/storage/user_session.dart';
 import 'package:stonk_it/utils/utils.dart';
 
@@ -14,12 +13,11 @@ class HomeViewModel extends ChangeNotifier {
   List<Map<String, dynamic>> _companies = [];
   List<Map<String, dynamic>> get companies => _companies;
   late List<String> _tickersList;
-  late List<Widget> _cards;
+  List<Widget> _cards = [];
   List<Widget> get cards => _cards;
 
   int _currentTopIndex = 0; // Tracks the top card index
   int get currentTopIndex => _currentTopIndex; // Tracks the top card index
-  late AppData _appData;
   late UserSession _userSession;
 
   bool _isFetching = false;
@@ -32,6 +30,11 @@ class HomeViewModel extends ChangeNotifier {
   int get cardChildIndex => _cardChildIndex;
   Map<String, dynamic>? _companyStockQuote;
   Map<String, dynamic>? get companyStockQuote => _companyStockQuote;
+
+  List _dislikedTickers = [];
+  List get dislikedTickers => _dislikedTickers;
+  List _likedTickers = [];
+  List get likedTickers => _likedTickers;
 
   final List<String> _timeFrames = ['1D', '1W', '1M', '1Y', 'Max'];
   List<String> get timeFrames => _timeFrames;
@@ -99,8 +102,9 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  setCurrentTopIndex(int? currentIndex) {
-    _currentTopIndex = currentIndex ?? 0;
+  setCurrentTopIndex(int currentIndex) {
+    debugPrint('Current Index test: $currentIndex');
+    _currentTopIndex = currentIndex;
     notifyListeners();
   }
 
@@ -109,42 +113,44 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  resetCompaniesAndCards(BuildContext context) {
+    _companies = [];
+    _cards = [];
+    _currentTopIndex = 0;
+    notifyListeners();
+    init(context);
+  }
+
   init(BuildContext context) async {
-    _appData = Provider.of<AppData>(context, listen: false);
     _userSession = Provider.of<UserSession>(context, listen: false);
-    await _appData.loadCompaniesData();
-    if (_appData.companies.isNotEmpty) {
-      _companies = _appData.companies;
-      updateCards(context);
-    } else {
-      await fetchTickersAndCompanies(context);
+    // hide liked tickers
+    await getLikedTickers(context);
+    await fetchTickersAndCompanies(context);
+    if (_companies.isNotEmpty) {
+      await fetchCompanyStockPrice(_companies[0]['ticker'], context);
+      fetchHistoricalStockPrice(_companies[0]['ticker'], context);
+      fetchHistoricalSectorPerformance(_companies[0]['exchange'], context);
+      fetchCompanyDividends(_companies[0]['ticker'], context);
+      fetchHistoricalStockPriceForChart(_companies[0]['ticker'], context);
     }
-    await fetchCompanyStockPrice(_companies[0]['ticker'], context);
-    fetchHistoricalStockPrice(_companies[0]['ticker'], context);
-    fetchHistoricalSectorPerformance(_companies[0]['exchange'], context);
-    fetchCompanyDividends(_companies[0]['ticker'], context);
-    fetchHistoricalStockPriceForChart(_companies[0]['ticker'], context);
   }
 
   // Function to update card list with dynamic background colors
-  void updateCards(BuildContext context) {
+  Future<void> updateCards(BuildContext context) async {
+    debugPrint('updateCards called');
     _cards = List.generate(companies.length, (index) {
       // Top card gets white, others get gray
       Color bgColor =
           (index == _currentTopIndex) ? Colors.white : AppColors.lightGray;
-      return FirstCardWidget(
+      return HomeScreenCard(
         backgroundColor: bgColor,
         companyName: companies[index]['companyName'],
         ticker: companies[index]['ticker'],
         description: companies[index]['description'],
-        // registeredName: companies[index]['registeredName'],
         logoUrl: companies[index]['logoUrl'],
         exchange: companies[index]['exchange'],
         sector: companies[index]['sector'],
         isLargeCap: companies[index]['isLargeCap'],
-        // exchange: '',
-        // sector: '',
-        // isLargeCap: false,
       );
     });
     notifyListeners();
@@ -153,23 +159,26 @@ class HomeViewModel extends ChangeNotifier {
   Future fetchTickersAndCompanies(BuildContext context) async {
     try {
       String params =
-          '&limit=3&sectors=Materials&marketCapMoreThan=10000000000&isActivelyTrading=true';
+          '&limit=10&sectors=Materials&marketCapMoreThan=10000000000&isActivelyTrading=true';
       List tickers = await _repo.fetchTickersFromStockScreener(params);
       _tickersList = tickers.map((item) => item['symbol'] as String).toList();
-      debugPrint(_tickersList.toString());
+      debugPrint('tickers list: $_tickersList');
 
       for (String ticker in _tickersList) {
+        bool isLikedTicker = _likedTickers.any((likedTicker) =>
+            likedTicker['tickers_name'].split('.')[0] == ticker);
+        if (isLikedTicker) {
+          debugPrint('Ticker $ticker is liked, skipping...');
+          continue; // Skip this ticker if it's disliked
+        }
         Map<String, dynamic> company = await fetchCompanyProfile(ticker);
         _companies.add(company);
       }
       for (var company in companies) {
         debugPrint(
-            'Ticker: ${company['ticker']}, Name: ${company['companyName']}, Sector: ${company['sector']}, Image: ${company['exchange']}');
+            'Ticker: ${company['ticker']}, Name: ${company['companyName']}, Sector: ${company['sector']}, Exchange: ${company['exchange']}');
       }
-      //saving data in shared prefs.
-      await _appData.saveCompaniesData(companies);
       updateCards(context);
-      // fetchCompanyStockPrice(_companies[0]['ticker'], context);
     } catch (e) {
       debugPrint(e.toString());
       Utils.errorSnackBar(context, e.toString());
@@ -218,9 +227,13 @@ class HomeViewModel extends ChangeNotifier {
           '&symbol=$ticker&from=${timeRangeData['from']}&to=${timeRangeData['to']}';
       final List historicalStockData =
           await _repo.fetchHistoricalStockPrice(param);
-      debugPrint(
-          'Historical Stock Data: ${historicalStockData.first}, ${historicalStockData.last}');
-      _stockPerformance = calculateStockPerformance(historicalStockData);
+      debugPrint('Historical Stock Data: $historicalStockData');
+
+      if (historicalStockData.isNotEmpty) {
+        _stockPerformance = calculateStockPerformance(historicalStockData);
+      } else {
+        _stockPerformance = 0.0;
+      }
     } catch (e) {
       Utils.errorSnackBar(context, e.toString());
       _stockPerformance = 0.0;
@@ -243,10 +256,13 @@ class HomeViewModel extends ChangeNotifier {
       final List historicalSectorData =
           await _repo.fetchHistoricalSectorPerformance(param);
 
-      debugPrint(
-          'Historical Sector Data: ${historicalSectorData.first}, ${historicalSectorData.last}');
-      _materialSectorPerformance =
-          calculateMaterialsSectorPerformance(historicalSectorData);
+      debugPrint('Historical Sector Data: $historicalSectorData');
+      if (historicalSectorData.isNotEmpty) {
+        _materialSectorPerformance =
+            calculateMaterialsSectorPerformance(historicalSectorData);
+      } else {
+        _materialSectorPerformance = 0.0;
+      }
     } catch (e) {
       Utils.errorSnackBar(context, e.toString());
       _materialSectorPerformance = 0.0;
@@ -305,6 +321,47 @@ class HomeViewModel extends ChangeNotifier {
     } catch (e) {
       // Utils.errorSnackBar(context, e.toString());
       debugPrint('Dislike Ticker Error: $e');
+    }
+  }
+
+  updateCompaniesList(BuildContext context, int prevIndex) {
+    debugPrint('updateCompaniesList called');
+    debugPrint('prevIndex: $prevIndex');
+    if (_companies.length > 1) {
+      _companies.removeAt(prevIndex);
+    }
+    notifyListeners();
+  }
+
+  Future getDislikedTickers(BuildContext context) async {
+    debugPrint('getDislikedTickers called');
+    try {
+      Map data = {"user_id": _userSession.userId};
+      final response = await _repo.getDislikedTickers(data);
+      debugPrint('getDislikedTickers response: $response');
+      if (response['status'] == true && response['data'] != []) {
+        _dislikedTickers = response['data'];
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('getDislikedTickers error: $e');
+      Utils.errorSnackBar(context, e.toString());
+    }
+  }
+
+  Future getLikedTickers(BuildContext context) async {
+    debugPrint('getLikedTickers called');
+    try {
+      Map data = {"user_id": _userSession.userId};
+      final response = await _repo.getLikedTickers(data);
+      debugPrint('getLikedTickers response: $response');
+      if (response['status'] == 'success' && response['data'] != []) {
+        _likedTickers = response['data'];
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('getLikedTickers error: $e');
+      Utils.errorSnackBar(context, e.toString());
     }
   }
 
@@ -378,10 +435,12 @@ class HomeViewModel extends ChangeNotifier {
       _isFetchingChart = false;
       _errorMsgForChart = '';
       // Add padding to minY and maxY
-      final priceRange = maxPrice - minPrice;
-      final padding = priceRange * 0.05;
-      final calculatedMinY = (minPrice - padding).floorToDouble();
-      final calculatedMaxY = (maxPrice + padding).ceilToDouble();
+      // final priceRange = maxPrice - minPrice;
+      // final padding = priceRange * 0.05;
+      // final calculatedMinY = (minPrice - padding).floorToDouble();
+      // final calculatedMaxY = (maxPrice + padding).ceilToDouble();
+      final calculatedMinY = minPrice.floorToDouble();
+      final calculatedMaxY = maxPrice.ceilToDouble();
 
       print('Total data points: ${reversedHistorical.length}');
       print('Month Labels: $monthLabels');

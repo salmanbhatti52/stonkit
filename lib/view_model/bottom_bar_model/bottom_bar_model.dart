@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:stonk_it/view_model/bottom_bar_model/home_view_model.dart';
+// import 'package:stonk_it/view_model/bottom_bar_model/home_view_model.dart';
 import 'package:stonk_it/view_model/bottom_bar_model/watchlist_view_model.dart';
 
 import '../../storage/user_session.dart';
@@ -12,9 +14,10 @@ import '../../view/bottom_bar/widgets/swipe_right_alert.dart';
 
 class BottomBarModel with ChangeNotifier {
   late UserSession _userSession;
-  late int _currentIndex;
+  late WatchListViewModel _watchListViewModel;
+  late HomeViewModel _homeViewModel;
   int get currentIndex => _currentIndex;
-  final WatchListViewModel _watchListViewModel = WatchListViewModel();
+  late int _currentIndex;
 
   final List<Widget> _pages = [
     WatchlistScreen(),
@@ -29,8 +32,12 @@ class BottomBarModel with ChangeNotifier {
   }
 
   void onBottomNavTap(int index, BuildContext context) {
+    debugPrint('user id: ${_userSession.userId}');
     if (index == 0) {
       _watchListViewModel.getLikedTickers(context);
+      _homeViewModel.setCardChildIndex(0);
+    } else if (index == 1) {
+      _homeViewModel.setCardChildIndex(0);
     }
     _currentIndex = index;
     notifyListeners();
@@ -38,6 +45,9 @@ class BottomBarModel with ChangeNotifier {
 
   void init(BuildContext context) {
     _userSession = Provider.of<UserSession>(context, listen: false);
+    _homeViewModel = Provider.of<HomeViewModel>(context, listen: false);
+    _watchListViewModel =
+        Provider.of<WatchListViewModel>(context, listen: false);
 
     if (_currentIndex == 1 &&
         _userSession.homeAlertShown == false &&

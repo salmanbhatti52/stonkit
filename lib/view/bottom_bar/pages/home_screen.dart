@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:stonk_it/resources/components/network_image_md.dart';
-import 'package:stonk_it/storage/app_data.dart';
 import 'package:stonk_it/view_model/bottom_bar_model/home_view_model.dart';
 
 import '../../../resources/assets.dart';
@@ -12,8 +10,8 @@ import '../../../resources/colors.dart';
 import '../../../resources/components/app_bar_md.dart';
 import '../../../resources/components/asset_image_md.dart';
 import '../../../resources/components/custom_button.dart';
+import '../../../resources/components/network_image_md.dart';
 import '../../../resources/constants.dart';
-import '../../../utils/utils.dart';
 import '../../settings/pages/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -26,13 +24,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final CardSwiperController _cardSwiperController = CardSwiperController();
   late HomeViewModel _viewModel;
-  late AppData _appData;
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     _viewModel = Provider.of<HomeViewModel>(context, listen: false);
-    _appData = Provider.of<AppData>(context, listen: false);
   }
 
   @override
@@ -69,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                value.companies.isNotEmpty
+                value.companies.isNotEmpty && value.cards.isNotEmpty
                     ? Expanded(
                         child: Stack(
                           children: [
@@ -94,89 +90,92 @@ class _HomeScreenState extends State<HomeScreen> {
                                     vertical: false,
                                   ),
                                   isLoop: true,
-                                  onSwipe: (previousIndex, currentIndex,
-                                      direction) async {
-                                    Map companyData =
-                                        _viewModel.companies[currentIndex!];
-                                    Map<String, dynamic>? companyStockQuote =
-                                        _viewModel.companyStockQuote;
-                                    if (direction ==
-                                        CardSwiperDirection.right) {
-                                      debugPrint('$companyStockQuote');
-                                      if (companyStockQuote != null) {
-                                        debugPrint(
-                                            'value is not empty: $companyStockQuote');
-                                        bool result = await _appData
-                                            .addToWatchlistIfNotExists(
-                                                companyStockQuote, context);
-                                        if (result) {
-                                          Utils.successSnackBar(context,
-                                              'Stock added to your watchlist.');
-                                          await _viewModel.likeThisTicker(
+                                  onSwipe: (
+                                    previousIndex,
+                                    currentIndex,
+                                    direction,
+                                  ) async {
+                                    if (currentIndex == 0) {
+                                      _viewModel
+                                          .resetCompaniesAndCards(context);
+                                    } else {
+                                      _viewModel.setCardChildIndex(0);
+                                      Map<String, dynamic> companyData =
+                                          _viewModel.companies[currentIndex!];
+
+                                      Map<String, dynamic>? companyStockQuote =
+                                          _viewModel.companyStockQuote;
+
+                                      if (direction ==
+                                          CardSwiperDirection.right) {
+                                        if (companyStockQuote != null) {
+                                          debugPrint(
+                                              'companyStockQuote swap right: $companyStockQuote');
+                                          // if (result) {
+                                          //   Utils.successSnackBar(context,
+                                          //       'Stock added to your watchlist.');
+                                          _viewModel.likeThisTicker(
                                               context, companyStockQuote);
+                                          // }
+                                        } else {
+                                          debugPrint(
+                                              'companyStockQuote swap right empty: $companyStockQuote');
                                         }
-                                      } else {
-                                        // Utils.errorSnackBar(
-                                        //     context, 'Payment Required.');
-                                        debugPrint(
-                                            'value is empty: $companyStockQuote');
+                                        _viewModel
+                                            .setCurrentTopIndex(currentIndex);
                                       }
-                                    }
-                                    if (direction == CardSwiperDirection.left) {
-                                      if (companyStockQuote != null) {
-                                        debugPrint(
-                                            'value is not empty: $companyStockQuote');
-                                        // bool result = await _appData
-                                        //     .addToWatchlistIfNotExists(
-                                        //     companyStockQuote, context);
-                                        // if (result) {
-                                        //   Utils.successSnackBar(context,
-                                        //       'Stock added to your watchlist.');
-                                        await _viewModel.dislikeThisTicker(
-                                            context, companyStockQuote);
-                                        // }
-                                      } else {
-                                        // Utils.errorSnackBar(
-                                        //     context, 'Payment Required.');
-                                        debugPrint(
-                                            'value is empty: $companyStockQuote');
+
+                                      if (direction ==
+                                          CardSwiperDirection.left) {
+                                        if (companyStockQuote != null) {
+                                          debugPrint(
+                                              'companyStockQuote swap left: $companyStockQuote');
+                                          _viewModel.dislikeThisTicker(
+                                              context, companyStockQuote);
+                                        } else {
+                                          debugPrint(
+                                              'companyStockQuote swap left empty: $companyStockQuote');
+                                        }
+                                        _viewModel
+                                            .setCurrentTopIndex(currentIndex);
                                       }
+
+                                      _viewModel.updateCards(
+                                          context); // Update card colors after swipe
+
+                                      // fetching data for current stock
+
+                                      // if (companyStockQuote == null) {
+                                      String ticker = companyData['ticker'];
+                                      String exchange = companyData['exchange'];
+                                      debugPrint(
+                                          'current ticker name: $ticker');
+                                      debugPrint(
+                                          'current ticker exchange: $exchange');
+                                      await _viewModel.fetchCompanyStockPrice(
+                                          ticker, context);
+                                      _viewModel.fetchHistoricalStockPrice(
+                                          ticker, context);
+                                      _viewModel
+                                          .fetchHistoricalSectorPerformance(
+                                              exchange, context);
+                                      _viewModel.fetchCompanyDividends(
+                                          ticker, context);
+                                      // }
+                                      _viewModel
+                                          .fetchHistoricalStockPriceForChart(
+                                              ticker, context);
                                     }
-                                    _viewModel.setCurrentTopIndex(currentIndex);
-                                    _viewModel.updateCards(
-                                        context); // Update card colors after swipe
-                                    debugPrint(
-                                        "Swiped to: ${_viewModel.currentTopIndex}");
-
-                                    //Adding Stock in watchList
-
-                                    // _viewModel.resetStockPrice();
-                                    String ticker = companyData['ticker'];
-                                    debugPrint('ticker: $ticker');
-                                    // if (companyStockQuote == null) {
-                                    //   debugPrint('abc');
-                                    await _viewModel.fetchCompanyStockPrice(
-                                        ticker, context);
-                                    _viewModel.fetchHistoricalStockPrice(
-                                        companyData['ticker'], context);
-                                    _viewModel.fetchHistoricalSectorPerformance(
-                                        companyData['exchange'], context);
-                                    _viewModel.fetchCompanyDividends(
-                                        companyData['ticker'], context);
-                                    // }
-                                    _viewModel
-                                        .fetchHistoricalStockPriceForChart(
-                                            companyData['ticker'], context);
-
-                                    print(currentIndex);
-
                                     return true;
                                   },
                                   onUndo:
                                       (previousIndex, currentIndex, direction) {
                                     return false;
                                   },
-                                  numberOfCardsDisplayed: 3,
+                                  numberOfCardsDisplayed:
+                                      _viewModel.companies.length > 3
+                                          ? 3
+                                          : _viewModel.companies.length,
                                   backCardOffset: const Offset(0, 40),
                                   padding:
                                       const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -186,6 +185,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     horizontalThresholdPercentage,
                                     verticalThresholdPercentage,
                                   ) {
+                                    index =
+                                        value.companies.length == 1 ? 0 : index;
                                     return value.cards[index];
                                   },
                                 ),
@@ -219,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           //       )
                           //     : SizedBox(),
                           Container(
-                            height: height * 0.662,
+                            height: height * 0.63,
                             margin: EdgeInsets.symmetric(horizontal: 35),
                             decoration: BoxDecoration(
                                 color: AppColors.lightGray,
@@ -234,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
 
                           Container(
-                            height: height * 0.64,
+                            height: height * 0.60,
                             width: width,
                             margin: EdgeInsets.symmetric(horizontal: 19),
                             decoration: BoxDecoration(
@@ -275,7 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class FirstCardWidget extends StatefulWidget {
+class HomeScreenCard extends StatefulWidget {
   final Color backgroundColor;
   final String? companyName;
   final String? ticker;
@@ -285,7 +286,7 @@ class FirstCardWidget extends StatefulWidget {
   final String sector;
   final bool isLargeCap;
 
-  const FirstCardWidget(
+  const HomeScreenCard(
       {super.key,
       required this.backgroundColor,
       required this.companyName,
@@ -297,10 +298,10 @@ class FirstCardWidget extends StatefulWidget {
       required this.isLargeCap});
 
   @override
-  FirstCardWidgetState createState() => FirstCardWidgetState();
+  HomeScreenCardState createState() => HomeScreenCardState();
 }
 
-class FirstCardWidgetState extends State<FirstCardWidget> {
+class HomeScreenCardState extends State<HomeScreenCard> {
   late HomeViewModel _homeViewModel;
   @override
   void didChangeDependencies() {
@@ -348,12 +349,6 @@ class FirstCardWidgetState extends State<FirstCardWidget> {
                           textAlign: TextAlign.right,
                         ),
                         Spacer(),
-                        // AssetsImageMd(
-                        //   name: Assets.fmgLtd,
-                        //   width: 170,
-                        //   height: 146.2,
-                        //   alignment: Alignment.center,
-                        // ),
                         Center(
                           child: SizedBox(
                             height: 120,
@@ -377,7 +372,7 @@ class FirstCardWidgetState extends State<FirstCardWidget> {
 
                         Spacer(),
                         Text(
-                          widget.companyName ?? 'FORTSCUE METALS GROUP LTD',
+                          widget.companyName ?? 'Lorem Ipsum',
                           textAlign: TextAlign.center,
                           style: kSixteenMediumWhitePoppins.copyWith(
                               color: Colors.black),
@@ -387,7 +382,7 @@ class FirstCardWidgetState extends State<FirstCardWidget> {
                           padding: const EdgeInsets.symmetric(horizontal: 8.0),
                           child: Text(
                             widget.description ??
-                                'Fortescue is a global leader in the iron ore industry, recognised for our innovation and development of world class infrastructure and mining assets',
+                                'Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem IpsumLorem IpsumLorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum Lorem Ipsum',
                             textAlign: TextAlign.center,
                             style: kFourteenRegBlackPoppins.copyWith(
                                 color: AppColors.darkGray),
@@ -694,7 +689,7 @@ class FirstCardWidgetState extends State<FirstCardWidget> {
                               ),
 
                               SizedBox(
-                                height: height * 0.28,
+                                height: height * 0.258,
                                 child: _homeViewModel.isFetchingChart == true
                                     ? Center(child: CircularProgressIndicator())
                                     : _homeViewModel.isFetchingChart == false &&
@@ -702,7 +697,7 @@ class FirstCardWidgetState extends State<FirstCardWidget> {
                                                 ''
                                         ? Center(
                                             child: Text(
-                                              '${_homeViewModel.errorMsgForChart} for this stock',
+                                              '${_homeViewModel.errorMsgForChart} to view this stock chart.',
                                             ),
                                           )
                                         : Padding(
@@ -720,7 +715,8 @@ class FirstCardWidgetState extends State<FirstCardWidget> {
                                                     belowBarData: BarAreaData(
                                                       show: true,
                                                       color: Colors.blue
-                                                          .withOpacity(0.2),
+                                                          .withValues(
+                                                              alpha: 0.2),
                                                     ),
                                                   ),
                                                 ],
@@ -873,7 +869,8 @@ class FirstCardWidgetState extends State<FirstCardWidget> {
                                                       (value) {
                                                     return FlLine(
                                                       color: Colors.grey
-                                                          .withOpacity(0.2),
+                                                          .withValues(
+                                                              alpha: 0.2),
                                                       strokeWidth: 0,
                                                     );
                                                   },
@@ -885,8 +882,6 @@ class FirstCardWidgetState extends State<FirstCardWidget> {
                                           ),
                               ),
                               SizedBox(),
-                              // AssetsImageMd(
-                              //     height: height * 0.265, name: Assets.chart),
                               // SizedBox(
                               //   height: 12.2,
                               // ),

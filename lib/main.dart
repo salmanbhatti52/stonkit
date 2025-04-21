@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
-import 'package:stonk_it/storage/app_data.dart';
 import 'package:stonk_it/storage/user_session.dart';
 import 'package:stonk_it/view_model/auth_models/forgot_pwd_form_model.dart';
 import 'package:stonk_it/view_model/auth_models/guest_login_model.dart';
@@ -24,7 +23,6 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => UserSession()),
-        ChangeNotifierProvider(create: (context) => AppData()),
         ChangeNotifierProvider(create: (context) => SignUpFormModel()),
         ChangeNotifierProvider(create: (context) => LoginFormModel()),
         ChangeNotifierProvider(create: (context) => ForgotPwdFormModel()),

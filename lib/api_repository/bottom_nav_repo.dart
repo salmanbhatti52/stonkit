@@ -22,15 +22,11 @@ class BottomNavRepo {
   }
 
   Future fetchHistoricalStockPrice(String param) async {
-    // debugPrint(
-    //     'fetchHistoricalStockPrice url: ${AppUrls.historicalStockPrice}$param');
     return await _baseApiServices.fetchGetApiResponse(
         url: '${AppUrls.historicalStockPrice}$param');
   }
 
   Future fetchHistoricalSectorPerformance(String param) async {
-    // debugPrint(
-    //     'fetchHistoricalSectorPerformance url: ${AppUrls.historicalSectorPerformance}$param');
     return await _baseApiServices.fetchGetApiResponse(
         url: '${AppUrls.historicalSectorPerformance}$param');
   }
