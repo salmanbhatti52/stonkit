@@ -27,8 +27,13 @@ class BottomBarModel with ChangeNotifier {
 
   List<Widget> get pages => _pages;
 
-  void setCurrentIndex(int index) {
+  void setCurrentIndex(int index, BuildContext context, bool? isFilterUpdated) {
+    _homeViewModel = Provider.of<HomeViewModel>(context, listen: false);
     _currentIndex = index;
+    if (index == 1 && isFilterUpdated == true) {
+      debugPrint('isFilterUpdated: $isFilterUpdated');
+      _homeViewModel.resetCompaniesAndCards(context: context, notify: false);
+    }
   }
 
   void onBottomNavTap(int index, BuildContext context) {

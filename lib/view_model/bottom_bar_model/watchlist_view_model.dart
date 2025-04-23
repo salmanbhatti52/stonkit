@@ -185,12 +185,16 @@ class WatchListViewModel extends ChangeNotifier {
       final List dividendData =
           await _bottomNavRepo.fetchCompanyDividends(param);
 
-      // Get the most recent dividend (first entry, assuming newest to oldest)
-      final recentDividend = dividendData.first;
-      final lastDividend = recentDividend['dividend'].toDouble();
-      final frequency = recentDividend['frequency'];
-      _dividendYield = calculateDividendYield(
-          frequency, lastDividend, _companyStockQuote!['price'].toDouble());
+      if (dividendData.isNotEmpty) {
+        // Get the most recent dividend (first entry, assuming newest to oldest)
+        final recentDividend = dividendData.first;
+        final lastDividend = recentDividend['dividend'].toDouble();
+        final frequency = recentDividend['frequency'];
+        _dividendYield = calculateDividendYield(
+            frequency, lastDividend, _companyStockQuote!['price'].toDouble());
+      } else {
+        _dividendYield = 0.0;
+      }
     } catch (e) {
       Utils.errorSnackBar(context, e.toString());
       _dividendYield = 0.0;
@@ -277,8 +281,11 @@ class WatchListViewModel extends ChangeNotifier {
       String param = '&symbol=$ticker&from=$fromDateString&to=$toDate';
       _historicalStockDataForChart =
           await _bottomNavRepo.fetchHistoricalStockPrice(param);
-      debugPrint(
-          'Historical Stock Data for chart: ${historicalStockDataForChart.first}, ${historicalStockDataForChart.last}');
+
+      if (_historicalStockDataForChart.isNotEmpty) {
+        debugPrint(
+            'Historical Stock Data for chart: ${historicalStockDataForChart.first}, ${historicalStockDataForChart.last}');
+      }
 
       // Process chart data
       final chartHistorical = _historicalStockDataForChart;

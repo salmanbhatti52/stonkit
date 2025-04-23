@@ -164,7 +164,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                                             Colors.transparent,
                                                         insetPadding: EdgeInsets
                                                             .symmetric(
-                                                                horizontal: 20),
+                                                                horizontal: 15),
                                                         contentPadding:
                                                             EdgeInsets.zero,
                                                         content: SizedBox(
@@ -172,12 +172,12 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                                                       .sizeOf(
                                                                           context)
                                                                   .height *
-                                                              0.65, // Use dynamic height
+                                                              0.62, // Use dynamic height
                                                           width: MediaQuery
                                                                       .sizeOf(
                                                                           context)
                                                                   .width *
-                                                              0.9, // Optional: dynamic width
+                                                              1.0, // Optional: dynamic width
                                                           child:
                                                               WatchListScreenCard(
                                                             ticker: companyData[
@@ -779,7 +779,7 @@ class WatchListScreenCardState extends State<WatchListScreenCard> {
                                 ],
                               ),
                               SizedBox(
-                                height: 10,
+                                height: 12,
                               ),
 
                               SizedBox(
@@ -806,7 +806,7 @@ class WatchListScreenCardState extends State<WatchListScreenCard> {
                                                     spots: _watchListViewModel
                                                         .chartSpots!,
                                                     isCurved: true,
-                                                    color: AppColors.primary,
+                                                    color: AppColors.lightBlue,
                                                     dotData:
                                                         FlDotData(show: false),
                                                     belowBarData: BarAreaData(
@@ -977,10 +977,9 @@ class WatchListScreenCardState extends State<WatchListScreenCard> {
                                             ),
                                           ),
                               ),
-                              SizedBox(),
-                              // SizedBox(
-                              //   height: 12.2,
-                              // ),
+                              SizedBox(
+                                height: 10,
+                              ),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: List.generate(

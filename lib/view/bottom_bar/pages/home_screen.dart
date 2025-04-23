@@ -35,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void didChangeDependencies() {
     // TODO: implement didChangeDependencies
     super.didChangeDependencies();
-    _viewModel.init(context);
+    _viewModel.init(context: context);
   }
 
   @override
@@ -96,8 +96,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                     direction,
                                   ) async {
                                     if (currentIndex == 0) {
-                                      _viewModel
-                                          .resetCompaniesAndCards(context);
+                                      _viewModel.resetCompaniesAndCards(
+                                          context: context, notify: true);
+                                      _viewModel.init(
+                                        context: context,
+                                      );
                                     } else {
                                       _viewModel.setCardChildIndex(0);
                                       Map<String, dynamic> companyData =
@@ -226,11 +229,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: AppColors.lightGray,
                                 borderRadius: BorderRadius.circular(8),
                                 boxShadow: [
+                                  // BoxShadow(
+                                  //     color: Colors.black.withValues(
+                                  //         alpha: (0.1 * 255).toDouble()),
+                                  //     blurRadius: 4,
+                                  //     offset: Offset(0, 3))
                                   BoxShadow(
-                                      color: Colors.black.withValues(
-                                          alpha: (0.1 * 255).toDouble()),
-                                      blurRadius: 4,
-                                      offset: Offset(0, 3))
+                                    color: Colors.black26,
+                                    blurRadius: 5,
+                                    spreadRadius: 2,
+                                  ),
                                 ]),
                           ),
 
@@ -242,11 +250,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(10),
                                 boxShadow: [
+                                  // BoxShadow(
+                                  //     color: AppColors.color4B4B4B.withValues(
+                                  //         alpha: (0.1 * 255).toDouble()),
+                                  //     blurRadius: 4,
+                                  //     offset: Offset(0, 3))
                                   BoxShadow(
-                                      color: AppColors.color4B4B4B.withValues(
-                                          alpha: (0.1 * 255).toDouble()),
-                                      blurRadius: 4,
-                                      offset: Offset(0, 3))
+                                    color: Colors.black26,
+                                    blurRadius: 5,
+                                    spreadRadius: 2,
+                                  ),
                                 ]),
                             child: Shimmer.fromColors(
                                 baseColor: Colors.white,
@@ -689,7 +702,7 @@ class HomeScreenCardState extends State<HomeScreenCard> {
                               ),
 
                               SizedBox(
-                                height: height * 0.258,
+                                height: height * 0.259,
                                 child: _homeViewModel.isFetchingChart == true
                                     ? Center(child: CircularProgressIndicator())
                                     : _homeViewModel.isFetchingChart == false &&
@@ -709,7 +722,7 @@ class HomeScreenCardState extends State<HomeScreenCard> {
                                                     spots: _homeViewModel
                                                         .chartSpots!,
                                                     isCurved: true,
-                                                    color: AppColors.primary,
+                                                    color: AppColors.lightBlue,
                                                     dotData:
                                                         FlDotData(show: false),
                                                     belowBarData: BarAreaData(

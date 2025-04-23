@@ -12,6 +12,12 @@ class UserSession with ChangeNotifier {
   bool get watchListAlertShown => _watchListAlertShown;
   bool _isEmailAlreadyExist = false;
   bool get isEmailAlreadyExist => _isEmailAlreadyExist;
+  String _selectedSector = 'Basic Materials';
+  String get selectedSector => _selectedSector;
+  String _selectedAsset = 'Companies';
+  String get selectedAsset => _selectedAsset;
+  String _selectedCap = 'Mid Cap';
+  String get selectedCap => _selectedCap;
 
   UserSession() {
     _loadUserSession();
@@ -25,6 +31,10 @@ class UserSession with ChangeNotifier {
     _homeAlertShown = preferences.getBool('homeAlertStatus') ?? false;
     _watchListAlertShown = preferences.getBool('watchListAlertStatus') ?? false;
     _isEmailAlreadyExist = preferences.getBool('isEmailAlreadyExist') ?? false;
+    _selectedSector =
+        preferences.getString('selectedSector') ?? 'Basic Materials';
+    _selectedAsset = preferences.getString('selectedAsset') ?? 'Companies';
+    _selectedCap = preferences.getString('selectedCap') ?? 'Mid Cap';
     debugPrint('UserSession: $_userId, $_email');
   }
 
@@ -53,6 +63,19 @@ class UserSession with ChangeNotifier {
     }
   }
 
+  Future<void> saveFilterPrefs({required Map filterPrefs}) async {
+    SharedPreferences? preferences = await SharedPreferences.getInstance();
+
+    preferences.setString('selectedSector', filterPrefs['selectedSector']);
+    preferences.setString('selectedAsset', filterPrefs['selectedAsset']);
+    preferences.setString('selectedCap', filterPrefs['selectedCap']);
+
+    // update session model
+    _selectedSector = filterPrefs['selectedSector'];
+    _selectedAsset = filterPrefs['selectedAsset'];
+    _selectedCap = filterPrefs['selectedCap'];
+  }
+
   Future setHomeAlertStatus() async {
     SharedPreferences? preferences = await SharedPreferences.getInstance();
     preferences.setBool('homeAlertStatus', true);
@@ -73,6 +96,9 @@ class UserSession with ChangeNotifier {
     preferences.remove('homeAlertStatus');
     preferences.remove('watchListAlertStatus');
     preferences.remove('isEmailAlreadyExist');
+    preferences.remove('selectedSector');
+    preferences.remove('selectedAsset');
+    preferences.remove('selectedCap');
     //if deleting account
     if (delAccount == true) {
       List<String>? savedEmails = [];
@@ -85,5 +111,6 @@ class UserSession with ChangeNotifier {
     _email = null;
     _homeAlertShown = false;
     _watchListAlertShown = false;
+    _isEmailAlreadyExist = false;
   }
 }

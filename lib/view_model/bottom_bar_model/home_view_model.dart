@@ -113,19 +113,22 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  resetCompaniesAndCards(BuildContext context) {
+  resetCompaniesAndCards(
+      {required BuildContext context, required bool notify}) {
     _companies = [];
     _cards = [];
     _currentTopIndex = 0;
-    notifyListeners();
-    init(context);
+    _cardChildIndex = 0;
+    if (notify) {
+      notifyListeners();
+    }
   }
 
-  init(BuildContext context) async {
+  init({required BuildContext context}) async {
     _userSession = Provider.of<UserSession>(context, listen: false);
     // hide liked tickers
     await getLikedTickers(context);
-    await fetchTickersAndCompanies(context);
+    await fetchTickersAndCompanies(context: context);
     if (_companies.isNotEmpty) {
       await fetchCompanyStockPrice(_companies[0]['ticker'], context);
       fetchHistoricalStockPrice(_companies[0]['ticker'], context);
@@ -156,13 +159,54 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future fetchTickersAndCompanies(BuildContext context) async {
+  Future fetchTickersAndCompanies({required BuildContext context}) async {
     try {
-      String params =
-          '&limit=10&sectors=Materials&marketCapMoreThan=10000000000&isActivelyTrading=true';
+      String params = '&limit=10&isActivelyTrading=true';
+
+      // Set the asset type parameter (ETFs or Companies)
+      if (_userSession.selectedAsset == 'ETFs') {
+        params += '&isEtf=true';
+      } else {
+        params += '&isEtf=false';
+      }
+
+      // Set the sector parameter
+      if (_userSession.selectedSector.isNotEmpty) {
+        params += '&sector=${_userSession.selectedSector}';
+      } else {
+        params += '&sector=Basic Materials';
+      }
+
+      // Set the market cap parameters
+      int? marketCapMoreThan;
+      int? marketCapLowerThan;
+      if (_userSession.selectedCap.isNotEmpty) {
+        if (_userSession.selectedCap == "Small Cap") {
+          marketCapMoreThan = null;
+          marketCapLowerThan = 2000000000; // Less than $2 billion
+          params += '&marketCapLowerThan=$marketCapLowerThan';
+        } else if (_userSession.selectedCap == "Mid Cap") {
+          marketCapMoreThan = 2000000000; // More than $2 billion
+          marketCapLowerThan = 10000000000; // Less than $10 billion
+          params +=
+              '&marketCapMoreThan=$marketCapMoreThan&marketCapLowerThan=$marketCapLowerThan';
+        } else if (_userSession.selectedCap == "Large Cap") {
+          marketCapMoreThan = 10000000000; // More than $10 billion
+          marketCapLowerThan = null;
+          params += '&marketCapMoreThan=$marketCapMoreThan';
+        }
+      } else {
+        params += '&marketCapMoreThan=10000000000';
+      }
+
       List tickers = await _repo.fetchTickersFromStockScreener(params);
       _tickersList = tickers.map((item) => item['symbol'] as String).toList();
       debugPrint('tickers list: $_tickersList');
+      if (_tickersList.isEmpty) {
+        Utils.errorSnackBar(
+            context, 'No Stocks found for the selected filters');
+        return;
+      }
 
       for (String ticker in _tickersList) {
         bool isLikedTicker = _likedTickers.any((likedTicker) =>
@@ -273,20 +317,25 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   Future fetchCompanyDividends(String ticker, BuildContext context) async {
-    try {
-      String param = '&symbol=$ticker';
-      final List dividendData = await _repo.fetchCompanyDividends(param);
+    // try {
+    String param = '&symbol=$ticker';
+    final List dividendData = await _repo.fetchCompanyDividends(param);
 
-      // Get the most recent dividend (first entry, assuming newest to oldest)
+    // Get the most recent dividend (first entry, assuming newest to oldest)
+    if (dividendData.isNotEmpty) {
       final recentDividend = dividendData.first;
       final lastDividend = recentDividend['dividend'].toDouble();
       final frequency = recentDividend['frequency'];
       _dividendYield = calculateDividendYield(
           frequency, lastDividend, _companyStockQuote!['price'].toDouble());
-    } catch (e) {
-      Utils.errorSnackBar(context, e.toString());
+    } else {
       _dividendYield = 0.0;
     }
+
+    // } catch (e) {
+    //   Utils.errorSnackBar(context, e.toString());
+    //   _dividendYield = 0.0;
+    // }
     notifyListeners();
     debugPrint('Dividend Yield: $_dividendYield');
   }
@@ -390,8 +439,11 @@ class HomeViewModel extends ChangeNotifier {
       String param = '&symbol=$ticker&from=$fromDateString&to=$toDate';
       _historicalStockDataForChart =
           await _repo.fetchHistoricalStockPrice(param);
-      debugPrint(
-          'Historical Stock Data for chart: ${historicalStockDataForChart.first}, ${historicalStockDataForChart.last}');
+
+      if (_historicalStockDataForChart.isNotEmpty) {
+        debugPrint(
+            'Historical Stock Data for chart: ${historicalStockDataForChart.first}, ${historicalStockDataForChart.last}');
+      }
 
       // Process chart data
       final chartHistorical = _historicalStockDataForChart;

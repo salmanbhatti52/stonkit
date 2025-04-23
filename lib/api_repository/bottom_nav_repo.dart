@@ -36,6 +36,11 @@ class BottomNavRepo {
         url: '${AppUrls.companyDividends}$param');
   }
 
+  Future fetchAvailableSectors() async {
+    return await _baseApiServices.fetchGetApiResponse(
+        url: AppUrls.availableSectors);
+  }
+
   Future likeTicker(dynamic data) async {
     return await _baseApiServices.fetchPostApiResponse(
         url: AppUrls.likeTicker, data: data);

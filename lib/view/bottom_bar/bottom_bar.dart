@@ -11,9 +11,11 @@ import '../../resources/components/asset_image_md.dart';
 class BottomBarMd extends StatefulWidget {
   static const String id = 'bottom_nav_bar';
   final int initialIndex;
+  final bool? isFilterUpdated;
   const BottomBarMd({
     super.key,
     required this.initialIndex,
+    this.isFilterUpdated,
   });
 
   @override
@@ -27,7 +29,8 @@ class _BottomBarMdState extends State<BottomBarMd> {
   void initState() {
     super.initState();
     _bottomBarModel = Provider.of<BottomBarModel>(context, listen: false);
-    _bottomBarModel.setCurrentIndex(widget.initialIndex);
+    _bottomBarModel.setCurrentIndex(
+        widget.initialIndex, context, widget.isFilterUpdated);
   }
 
   @override

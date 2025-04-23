@@ -32,4 +32,6 @@ class AppUrls {
       '${apiBaseUrlOfFMP}historical-sector-performance?apikey=$apiKeyOfFMP';
   static const companyDividends =
       '${apiBaseUrlOfFMP}dividends?apikey=$apiKeyOfFMP';
+  static const availableSectors =
+      '${apiBaseUrlOfFMP}available-sectors?apikey=$apiKeyOfFMP';
 }
