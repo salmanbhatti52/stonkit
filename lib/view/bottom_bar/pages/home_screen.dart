@@ -98,9 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     if (currentIndex == 0) {
                                       _viewModel.resetCompaniesAndCards(
                                           context: context, notify: true);
-                                      _viewModel.init(
-                                        context: context,
-                                      );
+                                      _viewModel.fetchCompaniesData(context);
                                     } else {
                                       _viewModel.setCardChildIndex(0);
                                       Map<String, dynamic> companyData =

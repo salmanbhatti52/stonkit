@@ -22,13 +22,13 @@ class Utils {
     ));
   }
 
-  static successSnackBar(BuildContext context, String msg) {
+  static successSnackBar(BuildContext context, String msg, int? seconds) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(
         msg,
         style: kToastTextStyle,
       ),
-      duration: const Duration(seconds: 2),
+      duration: Duration(seconds: seconds ?? 2),
       backgroundColor: AppColors.primary,
     ));
   }

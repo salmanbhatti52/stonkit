@@ -4,6 +4,8 @@ import 'package:stonk_it/resources/constants.dart';
 import 'package:stonk_it/storage/user_session.dart';
 import 'package:stonk_it/utils/utils.dart';
 import 'package:stonk_it/view/settings/pages/terms_screen.dart';
+import 'package:stonk_it/view_model/bottom_bar_model/home_view_model.dart';
+import 'package:stonk_it/view_model/bottom_bar_model/watchlist_view_model.dart';
 
 import '../../../resources/assets.dart';
 import '../../../resources/colors.dart';
@@ -24,6 +26,8 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late UserSession _userSession;
+  late HomeViewModel _homeViewModel;
+  late WatchListViewModel _watchListViewModel;
   @override
   void dispose() {
     // TODO: implement dispose
@@ -39,6 +43,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void init() async {
     _userSession = Provider.of<UserSession>(context, listen: false);
+    _homeViewModel = Provider.of<HomeViewModel>(context, listen: false);
+    _watchListViewModel =
+        Provider.of<WatchListViewModel>(context, listen: false);
   }
 
   @override
@@ -165,6 +172,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               GestureDetector(
                 onTap: () async {
                   await _userSession.clearUserData();
+                  _homeViewModel.resetCompaniesAndCards(
+                      context: context, notify: true);
+                  _watchListViewModel.resetWatchlist();
                   Navigator.pushNamedAndRemoveUntil(
                     context,
                     LoginScreen.id,

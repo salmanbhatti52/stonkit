@@ -48,7 +48,7 @@ class ForgotPwdFormModel with ChangeNotifier {
         if (status == 'error') {
           Utils.errorSnackBar(context, decodedData['message']);
         } else {
-          Utils.successSnackBar(context, "OTP sent to your email.");
+          Utils.successSnackBar(context, "OTP sent to your email.", 2);
           clearControllers();
           Map data = {
             'otp': decodedData['otp'],

@@ -29,7 +29,7 @@ class VerifyOtpModel with ChangeNotifier {
         Utils.errorSnackBar(context, decodedData['message']);
         return null;
       } else {
-        Utils.successSnackBar(context, "OTP sent to your email.");
+        Utils.successSnackBar(context, "OTP sent to your email.", 2);
         Map data = {
           'otp': decodedData['otp'],
           'id': decodedData['user']['id'],

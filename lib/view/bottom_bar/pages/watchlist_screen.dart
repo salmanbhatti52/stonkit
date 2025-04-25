@@ -144,7 +144,8 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                             debugPrint(
                                                 'Ticker: ${data['symbol']}');
                                             _viewModel.setCardChildIndex(0);
-                                            String tickerName = data['symbol']!;
+                                            String tickerName = data['symbol'];
+                                            debugPrint('test: $tickerName');
                                             Map companyData = await _viewModel
                                                 .fetchCompanyProfile(
                                                     tickerName);

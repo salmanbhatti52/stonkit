@@ -25,7 +25,7 @@ class ProfileModel with ChangeNotifier {
       if (status == 'error') {
         Utils.errorSnackBar(context, decodedData['message']);
       } else {
-        Utils.successSnackBar(context, decodedData['message']);
+        Utils.successSnackBar(context, decodedData['message'], 2);
         await _userSession.clearUserData(delAccount: true);
         Utils.setFocus(context);
         Navigator.pushNamedAndRemoveUntil(

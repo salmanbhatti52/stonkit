@@ -94,7 +94,7 @@ class WatchListViewModel extends ChangeNotifier {
     String param = '&symbol=$ticker';
     List decodedData = await _bottomNavRepo.fetchCompanyProfile(param);
     Map companyData = decodedData[0];
-    final double? marketCap = companyData['marketCap']?.toDouble();
+    final double marketCap = companyData['marketCap'].toDouble();
     Map<String, dynamic> company = {
       'ticker': companyData['symbol'],
       'companyName': companyData['companyName'],
@@ -102,7 +102,7 @@ class WatchListViewModel extends ChangeNotifier {
       'logoUrl': companyData['image'],
       'description': companyData['description'] ?? 'No Description',
       'sector': companyData['sector'] ?? 'Unknown',
-      'isLargeCap': marketCap! > 10000000000,
+      'isLargeCap': marketCap > 10000000000,
     };
     return company;
   }
@@ -209,6 +209,8 @@ class WatchListViewModel extends ChangeNotifier {
     try {
       Map data = {"user_id": _userSession.userId};
       final response = await _bottomNavRepo.getLikedTickers(data);
+      Utils.successSnackBar(context, 'Fetching Updates...', 7);
+
       debugPrint('getLikedTickers response: $response');
       if (response['status'] == 'success' && response['data'].length > 0) {
         debugPrint('getLikedTickers success: ${response['data']}');
@@ -387,7 +389,7 @@ class WatchListViewModel extends ChangeNotifier {
     }
   }
 
-  calculateDividendYield(String frequency, double lastDividend, double price) {
+  calculateDividendYield(String? frequency, double lastDividend, double price) {
     // Calculate annual dividend based on frequency
     double annualDividend;
     switch (frequency) {
@@ -453,6 +455,12 @@ class WatchListViewModel extends ChangeNotifier {
 
   updateWatchlist(List<Map<String, dynamic>> value) {
     _watchlist = value;
+    debugPrint('Watchlist updated: $_watchlist');
+    notifyListeners();
+  }
+
+  resetWatchlist() {
+    _watchlist = [];
     debugPrint('Watchlist updated: $_watchlist');
     notifyListeners();
   }
