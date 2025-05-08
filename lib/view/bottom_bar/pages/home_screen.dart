@@ -98,8 +98,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                     if (currentIndex == 0) {
                                       _viewModel.resetCompaniesAndCards(
                                           context: context, notify: true);
-                                      _viewModel.fetchCompaniesData(context);
+                                      _viewModel
+                                          .getBufferCompaniesData(context);
                                     } else {
+                                      if (currentIndex == 1) {
+                                        _viewModel.fetchCompaniesDataAsBuffer(
+                                            context);
+                                      }
                                       _viewModel.setCardChildIndex(0);
                                       Map<String, dynamic> companyData =
                                           _viewModel.companies[currentIndex!];
@@ -296,6 +301,8 @@ class HomeScreenCard extends StatefulWidget {
   final String exchange;
   final String sector;
   final bool isLargeCap;
+  final bool isMidCap;
+  final bool isSmallCap;
 
   const HomeScreenCard(
       {super.key,
@@ -306,7 +313,9 @@ class HomeScreenCard extends StatefulWidget {
       this.logoUrl,
       required this.exchange,
       required this.sector,
-      required this.isLargeCap});
+      required this.isLargeCap,
+      required this.isMidCap,
+      required this.isSmallCap});
 
   @override
   HomeScreenCardState createState() => HomeScreenCardState();
@@ -405,18 +414,23 @@ class HomeScreenCardState extends State<HomeScreenCard> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            widget.isLargeCap
-                                ? CustomButton(
-                                    margin: EdgeInsets.symmetric(horizontal: 9),
-                                    height: 35,
-                                    width: 120,
-                                    buttonText: 'Large Cap',
-                                    textStyle: kTwelveRegular050B15Poppins
-                                        .copyWith(color: Colors.white),
-                                    color: AppColors.primary,
-                                    prefixIcon: Assets.tag,
-                                    borderColor: Colors.transparent)
-                                : SizedBox(),
+                            CustomButton(
+                                margin: EdgeInsets.symmetric(horizontal: 9),
+                                height: 35,
+                                width: 120,
+                                buttonText: widget.isLargeCap
+                                    ? 'Large Cap'
+                                    : widget.isMidCap
+                                        ? 'Mid Cap'
+                                        : widget.isSmallCap
+                                            ? 'Small Cap'
+                                            : 'Large Cap',
+                                textStyle: kTwelveRegular050B15Poppins.copyWith(
+                                    color: Colors.white),
+                                color: AppColors.primary,
+                                prefixIcon: Assets.tag,
+                                borderColor: Colors.transparent),
+
                             // SizedBox(
                             //   width: 18,
                             // ),

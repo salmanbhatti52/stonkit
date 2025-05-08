@@ -11,6 +11,7 @@ import '../../view/bottom_bar/pages/home_screen.dart';
 class HomeViewModel extends ChangeNotifier {
   final BottomNavRepo _repo = BottomNavRepo();
   List<Map<String, dynamic>> _companies = [];
+  List<Map<String, dynamic>> _bufferCompaniesData = [];
   List<Map<String, dynamic>> get companies => _companies;
 
   List<String> _tickersList = [];
@@ -155,6 +156,8 @@ class HomeViewModel extends ChangeNotifier {
         exchange: companies[index]['exchange'],
         sector: companies[index]['sector'],
         isLargeCap: companies[index]['isLargeCap'],
+        isMidCap: companies[index]['isMidCap'],
+        isSmallCap: companies[index]['isSmallCap'],
       );
     });
     notifyListeners();
@@ -197,7 +200,7 @@ class HomeViewModel extends ChangeNotifier {
           params += '&marketCapMoreThan=$marketCapMoreThan';
         }
       } else {
-        params += '&marketCapMoreThan=10000000000';
+        // params += '&marketCapMoreThan=10000000000';
       }
 
       List tickers = await _repo.fetchTickersFromStockScreener(params);
@@ -215,24 +218,6 @@ class HomeViewModel extends ChangeNotifier {
       Utils.errorSnackBar(context, e.toString());
     }
   }
-
-  // Future fetchCompaniesData(BuildContext context) async {
-  //   for (String ticker in _tickersList) {
-  //     bool isLikedTicker = _likedTickers.any(
-  //         (likedTicker) => likedTicker['tickers_name'].split('.')[0] == ticker);
-  //     if (isLikedTicker) {
-  //       debugPrint('Ticker $ticker is liked, skipping...');
-  //       continue; // Skip this ticker if it's disliked
-  //     }
-  //     Map<String, dynamic> company = await fetchCompanyProfile(ticker);
-  //     _companies.add(company);
-  //   }
-  //   for (var company in companies) {
-  //     debugPrint(
-  //         'Ticker: ${company['ticker']}, Name: ${company['companyName']}, Sector: ${company['sector']}, Exchange: ${company['exchange']}');
-  //   }
-  //   updateCards(context);
-  // }
 
   // Updated function to fetch company data in batches
   Future<void> fetchCompaniesData(BuildContext context) async {
@@ -298,6 +283,75 @@ class HomeViewModel extends ChangeNotifier {
     }
   }
 
+  // Updated function to fetch company data in batches
+  Future<void> fetchCompaniesDataAsBuffer(BuildContext context) async {
+    _bufferCompaniesData = [];
+    // If ticker list is empty, return early
+    if (_tickersList.isEmpty) {
+      debugPrint('Ticker list is empty, no data to fetch.');
+      init(context: context);
+      return;
+    }
+
+    // Calculate how many tickers to fetch (up to _batchSize or remaining)
+    int remainingTickers = _tickersList.length - _currentTickerIndex;
+    int batchSize =
+        remainingTickers >= _batchSize ? _batchSize : remainingTickers;
+
+    // Fetch company profiles for the batch
+    for (int i = 0; i < batchSize; i++) {
+      String ticker = _tickersList[_currentTickerIndex];
+
+      // Check if ticker is liked
+      bool isLikedTicker = _likedTickers.any(
+          (likedTicker) => likedTicker['tickers_name'].split('.')[0] == ticker);
+      if (isLikedTicker) {
+        debugPrint('Ticker $ticker is liked, skipping...');
+        _currentTickerIndex = (_currentTickerIndex + 1) % _tickersList.length;
+        if (_currentTickerIndex == 0) {
+          debugPrint('Reached end of ticker list, resetting to start.');
+          resetTickersList();
+        }
+        continue; // Skip liked ticker
+      }
+
+      // Fetch company profile
+      try {
+        Map<String, dynamic> company = await fetchCompanyProfile(ticker);
+        _bufferCompaniesData.add(company);
+        debugPrint(
+            'Fetched: Ticker: ${company['ticker']}, Name: ${company['companyName']}, '
+            'Sector: ${company['sector']}, Exchange: ${company['exchange']}');
+      } catch (e) {
+        debugPrint('Error fetching profile for $ticker: $e');
+      }
+
+      // Move to next ticker
+      _currentTickerIndex = (_currentTickerIndex + 1) % _tickersList.length;
+      if (_currentTickerIndex == 0) {
+        debugPrint('Reached end of ticker list, resetting to start.');
+        resetTickersList();
+      }
+    }
+  }
+
+  getBufferCompaniesData(BuildContext context) async {
+    _companies = _bufferCompaniesData;
+
+    // Update UI after batch
+    if (_companies.isNotEmpty) {
+      await updateCards(context);
+      await fetchCompanyStockPrice(_companies[0]['ticker'], context);
+      fetchHistoricalStockPrice(_companies[0]['ticker'], context);
+      fetchHistoricalSectorPerformance(_companies[0]['exchange'], context);
+      fetchCompanyDividends(_companies[0]['ticker'], context);
+      fetchHistoricalStockPriceForChart(_companies[0]['ticker'], context);
+    } else {
+      fetchCompaniesDataAsBuffer(context);
+      debugPrint('No new companies fetched (all skipped or errors).');
+    }
+  }
+
   // For testing: Set tickers list
   void resetTickersList() {
     _tickersList = [];
@@ -307,7 +361,7 @@ class HomeViewModel extends ChangeNotifier {
     String param = '&symbol=$ticker';
     List decodedData = await _repo.fetchCompanyProfile(param);
     Map companyData = decodedData[0];
-    final double? marketCap = companyData['marketCap']?.toDouble();
+    final double marketCap = companyData['marketCap'].toDouble();
     Map<String, dynamic> company = {
       'ticker': companyData['symbol'],
       'companyName': companyData['companyName'],
@@ -315,7 +369,11 @@ class HomeViewModel extends ChangeNotifier {
       'logoUrl': companyData['image'],
       'description': companyData['description'] ?? 'No Description',
       'sector': companyData['sector'] ?? 'Unknown',
-      'isLargeCap': marketCap! > 10000000000,
+      'isLargeCap': marketCap > 10000000000, // More than $10 billion,
+      'isMidCap': marketCap > 2000000000 &&
+          marketCap <
+              10000000000, // More than $2 billion && Less than $10 billion,
+      'isSmallCap': marketCap < 2000000000 // Less than $2 billion,
     };
     return company;
   }

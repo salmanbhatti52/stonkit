@@ -84,9 +84,11 @@ class FilterViewModel extends ChangeNotifier {
   toggleSectorSelection(dynamic sector) {
     // sector['selected'] = !sector['selected'];
     if (_selectedSector != sector['name']) {
-      _isChangesAdded = true;
+      _selectedSector = sector['name'];
+    } else {
+      _selectedSector = '';
     }
-    _selectedSector = sector['name'];
+    _isChangesAdded = true;
     notifyListeners();
   }
 
