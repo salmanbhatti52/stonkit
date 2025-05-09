@@ -12,24 +12,31 @@ class FilterViewModel extends ChangeNotifier {
 
   List<Map<String, dynamic>> _sectors = [];
   List<Map<String, dynamic>> get sectors => _sectors;
+  bool _isAllSectorsSelected = false;
+  bool get isAllSectorsSelected => _isAllSectorsSelected;
+
   String _selectedSector = '';
   String get selectedSector => _selectedSector;
   final BottomNavRepo _bottomNavRepo = BottomNavRepo();
   final List _assetTypes = [
-    {'name': 'ETFs'},
-    {'name': 'Companies'},
+    {'name': 'ETFs', 'selected': true},
+    {'name': 'Companies', 'selected': true},
   ];
+  bool _isAllAssetsSelected = true;
+  bool get isAllAssetsSelected => _isAllAssetsSelected;
 
   List get assetTypes => _assetTypes;
   String _selectedAsset = 'Companies';
   String get selectedAsset => _selectedAsset;
 
   final List _capitalizationTypes = [
-    {'name': 'Small Cap'},
-    {'name': 'Mid Cap'},
-    {'name': 'Large Cap'},
+    {'name': 'Small Cap', 'selected': true},
+    {'name': 'Mid Cap', 'selected': true},
+    {'name': 'Large Cap', 'selected': true},
   ];
   List get capitalizationTypes => _capitalizationTypes;
+  bool _isAllCapitalizationSelected = true;
+  bool get isAllCapitalizationSelected => _isAllCapitalizationSelected;
   String _selectedCap = 'Mid Cap';
   String get selectedCap => _selectedCap;
   late UserSession _userSession;
@@ -53,14 +60,13 @@ class FilterViewModel extends ChangeNotifier {
           return {
             'name': sectorName,
             'icon': sectorIcons[sectorName] ?? '',
-            // 'selected': false,
+            'selected': true,
           };
         },
       ).toList();
-      // Set the first sector as selected by default
-      if (_sectors.isNotEmpty && _selectedSector.isEmpty) {
-        _selectedSector = _sectors[0]['name'];
-        // _sectors[0]['selected'] = true;
+
+      if (_sectors.isNotEmpty) {
+        _isAllSectorsSelected = true;
       }
       notifyListeners();
     } catch (e) {
@@ -72,42 +78,121 @@ class FilterViewModel extends ChangeNotifier {
   }
 
   toggleAllSectorsSelection() {
+    // check and toggle all sectors
     bool allSelected = _sectors.every((element) => element['selected']);
 
     for (var element in _sectors) {
       element['selected'] = !allSelected;
     }
+
+    // update allSelected
+    _isAllSectorsSelected = !allSelected;
+
     _isChangesAdded = true;
     notifyListeners();
   }
 
   toggleSectorSelection(dynamic sector) {
-    // sector['selected'] = !sector['selected'];
-    if (_selectedSector != sector['name']) {
-      _selectedSector = sector['name'];
+    // unselect all other sectors except the one selected
+    if (_isAllSectorsSelected) {
+      for (var element in _sectors) {
+        if (element['name'] == sector['name']) {
+          continue;
+        }
+        element['selected'] = false;
+      }
     } else {
-      _selectedSector = '';
+      // toggle the selected sector
+      for (var element in _sectors) {
+        if (element['name'] == sector['name']) {
+          continue;
+        }
+        element['selected'] = false;
+      }
+      Map sectorToToggle = _sectors.firstWhere(
+        (element) => element['name'] == sector['name'],
+      );
+      sectorToToggle['selected'] = !sectorToToggle['selected'];
     }
+    _isAllSectorsSelected =
+        _sectors.every((element) => element['selected'] == true);
+
+    _isChangesAdded = true;
+    notifyListeners();
+  }
+
+  toggleAllAssetsSelection() {
+    // check and toggle all assets
+    bool allSelected = _assetTypes.every((element) => element['selected']);
+
+    for (var element in _assetTypes) {
+      element['selected'] = !allSelected;
+    }
+
+    // update allSelected
+    _isAllAssetsSelected = !allSelected;
+
     _isChangesAdded = true;
     notifyListeners();
   }
 
   toggleAssetSelection(Map asset) {
-    // _assetTypes[index]['selected'] = !_assetTypes[index]['selected'];
-    if (_selectedAsset != asset['name']) {
-      _isChangesAdded = true;
+    // unselect all other assets except the one selected
+    for (var element in _assetTypes) {
+      if (element['name'] == asset['name']) {
+        continue;
+      }
+      element['selected'] = false;
     }
-    _selectedAsset = asset['name'];
+
+    // toggle the selected asset
+    Map assetToToggle = _assetTypes.firstWhere(
+      (element) => element['name'] == asset['name'],
+    );
+    assetToToggle['selected'] = !assetToToggle['selected'];
+
+    _isAllAssetsSelected =
+        _assetTypes.every((element) => element['selected'] == false);
+
+    _isChangesAdded = true;
+    notifyListeners();
+  }
+
+  toggleAllCapitalisationSelection() {
+    // check and toggle all capitalization
+    bool allSelected =
+        _capitalizationTypes.every((element) => element['selected']);
+
+    for (var element in _capitalizationTypes) {
+      element['selected'] = !allSelected;
+    }
+
+    // update allSelected
+    _isAllCapitalizationSelected = !allSelected;
+
+    _isChangesAdded = true;
     notifyListeners();
   }
 
   toggleCapitalisationSelection(Map cap) {
-    // _capitalizationTypes[index]['selected'] =
-    //     !_capitalizationTypes[index]['selected'];
-    if (_selectedCap != cap['name']) {
-      _isChangesAdded = true;
+    // unselect all other caps except the one selected
+    for (var element in _capitalizationTypes) {
+      if (element['name'] == cap['name']) {
+        continue;
+      }
+      element['selected'] = false;
     }
-    _selectedCap = cap['name'];
+
+    // toggle the selected cap
+    Map capToToggle = _capitalizationTypes.firstWhere(
+      (element) => element['name'] == cap['name'],
+    );
+    capToToggle['selected'] = !capToToggle['selected'];
+
+    _isAllCapitalizationSelected =
+        _capitalizationTypes.every((element) => element['selected'] == false);
+
+    _isChangesAdded = true;
     notifyListeners();
   }
 

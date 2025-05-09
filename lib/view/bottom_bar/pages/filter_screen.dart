@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:stonk_it/resources/constants.dart';
-import 'package:stonk_it/storage/user_session.dart';
-import 'package:stonk_it/view/bottom_bar/bottom_bar.dart';
 import 'package:stonk_it/view_model/bottom_bar_model/filter_view_model.dart';
 
 import '../../../resources/assets.dart';
@@ -22,14 +20,12 @@ class FilterScreen extends StatefulWidget {
 
 class _FilterScreenState extends State<FilterScreen> {
   late FilterViewModel _viewModel;
-  late UserSession _userSession;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     _viewModel = Provider.of<FilterViewModel>(context, listen: false);
-    _userSession = Provider.of<UserSession>(context, listen: false);
     _viewModel.setFilters(context);
     _viewModel.fetchAvailableSectors(context);
   }
@@ -79,24 +75,29 @@ class _FilterScreenState extends State<FilterScreen> {
                             'Sector Selection',
                             style: kEighteenMedBlackPoppins,
                           ),
-                          // GestureDetector(
-                          //   onTap: () {
-                          //     _viewModel.toggleAllSectorsSelection();
-                          //   },
-                          //   child: Container(
-                          //       height: 20,
-                          //       width: 70,
-                          //       margin: EdgeInsets.only(right: 20),
-                          //       decoration: BoxDecoration(
-                          //         color: AppColors.lightGray,
-                          //         borderRadius: BorderRadius.circular(10),
-                          //       ),
-                          //       child: Center(
-                          //           child: Text(
-                          //         'Select All',
-                          //         style: kTenMedBluePoppins,
-                          //       ))),
-                          // )
+                          GestureDetector(
+                            onTap: () {
+                              _viewModel.toggleAllSectorsSelection();
+                            },
+                            child: Container(
+                                height: 20,
+                                width: 70,
+                                margin: EdgeInsets.only(right: 20),
+                                decoration: BoxDecoration(
+                                  color: AppColors.lightGray,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Center(child: Consumer<FilterViewModel>(
+                                  builder: (context, value, child) {
+                                    return Text(
+                                      value.isAllSectorsSelected
+                                          ? 'Unselect All'
+                                          : 'Select All',
+                                      style: kTenMedBluePoppins,
+                                    );
+                                  },
+                                ))),
+                          )
                         ],
                       ),
                       SizedBox(
@@ -111,10 +112,9 @@ class _FilterScreenState extends State<FilterScreen> {
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // _viewModel.sectors.isNotEmpty &&
-                                //         _viewModel.sectors.every((element) =>
-                                //             element['selected'] == false)
-                                _viewModel.selectedSector.isEmpty
+                                value.sectors.every(
+                                  (element) => element['selected'] == false,
+                                )
                                     ? Text(
                                         'Choose at least 1 sector',
                                         style: kTwelveRegular050B15Poppins
@@ -161,9 +161,6 @@ class _FilterScreenState extends State<FilterScreen> {
                                                         _viewModel
                                                             .toggleSectorSelection(
                                                                 item);
-                                                        // _viewModel
-                                                        //     .toggleIsChangesAdded(
-                                                        //         true);
                                                       },
                                                       child: Container(
                                                         height: 70,
@@ -179,20 +176,14 @@ class _FilterScreenState extends State<FilterScreen> {
                                                         ),
                                                         decoration:
                                                             BoxDecoration(
-                                                          color:
-                                                              // item['selected']
-                                                              _viewModel.selectedSector ==
-                                                                      item[
-                                                                          'name']
-                                                                  ? AppColors
-                                                                      .lightBlue
-                                                                  : AppColors
-                                                                      .lightGray,
+                                                          color: item[
+                                                                  'selected']
+                                                              ? AppColors
+                                                                  .lightBlue
+                                                              : AppColors
+                                                                  .lightGray,
                                                           boxShadow:
-                                                              // item['selected']
-                                                              _viewModel.selectedSector ==
-                                                                      item[
-                                                                          'name']
+                                                              item['selected']
                                                                   ? [
                                                                       BoxShadow(
                                                                         color: Colors
@@ -218,21 +209,18 @@ class _FilterScreenState extends State<FilterScreen> {
                                                                   item['icon'],
                                                               fit: BoxFit
                                                                   .scaleDown,
-                                                              colorFilter:
-                                                                  // item['selected']
-                                                                  _viewModel.selectedSector ==
-                                                                          item[
-                                                                              'name']
-                                                                      ? ColorFilter.mode(
-                                                                          Colors
-                                                                              .white,
-                                                                          BlendMode
-                                                                              .srcIn)
-                                                                      : ColorFilter.mode(
-                                                                          AppColors
-                                                                              .gray,
-                                                                          BlendMode
-                                                                              .srcIn),
+                                                              colorFilter: item[
+                                                                      'selected']
+                                                                  ? ColorFilter.mode(
+                                                                      Colors
+                                                                          .white,
+                                                                      BlendMode
+                                                                          .srcIn)
+                                                                  : ColorFilter.mode(
+                                                                      AppColors
+                                                                          .gray,
+                                                                      BlendMode
+                                                                          .srcIn),
                                                             ),
                                                             SizedBox(height: 5),
                                                             Text(
@@ -243,15 +231,12 @@ class _FilterScreenState extends State<FilterScreen> {
                                                               style:
                                                                   kNineRegGrayPoppins
                                                                       .copyWith(
-                                                                color:
-                                                                    // item['selected']
-                                                                    _viewModel.selectedSector ==
-                                                                            item[
-                                                                                'name']
-                                                                        ? Colors
-                                                                            .white
-                                                                        : AppColors
-                                                                            .gray,
+                                                                color: item[
+                                                                        'selected']
+                                                                    ? Colors
+                                                                        .white
+                                                                    : AppColors
+                                                                        .gray,
                                                               ),
                                                             ),
                                                           ],
@@ -274,10 +259,38 @@ class _FilterScreenState extends State<FilterScreen> {
                       SizedBox(
                         height: 16,
                       ),
-                      Text(
-                        'Asset Type Selection',
-                        style: kEighteenMedBlackPoppins,
-                        textAlign: TextAlign.left,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Asset Type Selection',
+                            style: kEighteenMedBlackPoppins,
+                            textAlign: TextAlign.left,
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              _viewModel.toggleAllAssetsSelection();
+                            },
+                            child: Container(
+                                height: 20,
+                                width: 70,
+                                margin: EdgeInsets.only(right: 20),
+                                decoration: BoxDecoration(
+                                  color: AppColors.lightGray,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Center(child: Consumer<FilterViewModel>(
+                                  builder: (context, value, child) {
+                                    return Text(
+                                      value.isAllAssetsSelected
+                                          ? 'Unselect All'
+                                          : 'Select All',
+                                      style: kTenMedBluePoppins,
+                                    );
+                                  },
+                                ))),
+                          )
+                        ],
                       ),
                       SizedBox(
                         height: 14,
@@ -288,9 +301,8 @@ class _FilterScreenState extends State<FilterScreen> {
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              // _viewModel.assetTypes.every(
-                              //         (element) => element['selected'] == false)
-                              _viewModel.selectedAsset.isEmpty
+                              _viewModel.assetTypes.every(
+                                      (element) => element['selected'] == false)
                                   ? Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.stretch,
@@ -323,19 +335,16 @@ class _FilterScreenState extends State<FilterScreen> {
                                     return GestureDetector(
                                       onTap: () {
                                         _viewModel.toggleAssetSelection(asset);
-                                        // _viewModel.toggleIsChangesAdded(true);
                                       },
                                       child: Container(
                                         height: 66,
                                         width: 100,
                                         margin: EdgeInsets.only(right: 12),
                                         decoration: BoxDecoration(
-                                          color: assetName ==
-                                                  _viewModel.selectedAsset
+                                          color: asset['selected']
                                               ? AppColors.lightBlue
                                               : AppColors.lightGray,
-                                          boxShadow: assetName ==
-                                                  _viewModel.selectedAsset
+                                          boxShadow: asset['selected']
                                               ? [
                                                   BoxShadow(
                                                     color: Colors.black26,
@@ -353,8 +362,7 @@ class _FilterScreenState extends State<FilterScreen> {
                                             textAlign: TextAlign.center,
                                             style: kFourteenRegGrayPoppins
                                                 .copyWith(
-                                              color: assetName ==
-                                                      _viewModel.selectedAsset
+                                              color: asset['selected']
                                                   ? Colors.white
                                                   : AppColors.gray,
                                             ),
@@ -373,10 +381,39 @@ class _FilterScreenState extends State<FilterScreen> {
                       SizedBox(
                         height: 20,
                       ),
-                      Text(
-                        'Market Capitalisation',
-                        style: kEighteenMedBlackPoppins,
-                        textAlign: TextAlign.left,
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Market Capitalisation',
+                            style: kEighteenMedBlackPoppins,
+                            textAlign: TextAlign.left,
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              _viewModel.toggleAllCapitalisationSelection();
+                            },
+                            child: Container(
+                                height: 20,
+                                width: 70,
+                                margin: EdgeInsets.only(right: 20),
+                                decoration: BoxDecoration(
+                                  color: AppColors.lightGray,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Center(child: Consumer<FilterViewModel>(
+                                  builder: (context, value, child) {
+                                    return Text(
+                                      value.isAllCapitalizationSelected
+                                          ? 'Unselect All'
+                                          : 'Select All',
+                                      style: kTenMedBluePoppins,
+                                    );
+                                  },
+                                ))),
+                          )
+                        ],
                       ),
                       SizedBox(
                         height: 14,
@@ -386,9 +423,8 @@ class _FilterScreenState extends State<FilterScreen> {
                         builder: (context, value, child) {
                           return Column(
                             children: [
-                              // _viewModel.capitalizationTypes.every(
-                              //         (item) => item['selected'] == false)
-                              _viewModel.selectedCap.isEmpty
+                              _viewModel.capitalizationTypes.every(
+                                      (item) => item['selected'] == false)
                                   ? Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.stretch,
@@ -414,8 +450,6 @@ class _FilterScreenState extends State<FilterScreen> {
                                       _viewModel.capitalizationTypes.length,
                                   scrollDirection: Axis.horizontal,
                                   itemBuilder: (context, index) {
-                                    // bool selected = _viewModel
-                                    //     .capitalizationTypes[index]['selected'];
                                     String capName = _viewModel
                                         .capitalizationTypes[index]['name'];
                                     Map cap =
@@ -424,27 +458,24 @@ class _FilterScreenState extends State<FilterScreen> {
                                       onTap: () {
                                         _viewModel
                                             .toggleCapitalisationSelection(cap);
-                                        // _viewModel.toggleIsChangesAdded(true);
                                       },
                                       child: Container(
                                         height: 66,
                                         width: 100,
                                         margin: EdgeInsets.only(right: 12),
                                         decoration: BoxDecoration(
-                                          color:
-                                              capName == _viewModel.selectedCap
-                                                  ? AppColors.lightBlue
-                                                  : AppColors.lightGray,
-                                          boxShadow:
-                                              capName == _viewModel.selectedCap
-                                                  ? [
-                                                      BoxShadow(
-                                                        color: Colors.black26,
-                                                        blurRadius: 5,
-                                                        spreadRadius: 2,
-                                                      ),
-                                                    ]
-                                                  : null,
+                                          color: cap['selected']
+                                              ? AppColors.lightBlue
+                                              : AppColors.lightGray,
+                                          boxShadow: cap['selected']
+                                              ? [
+                                                  BoxShadow(
+                                                    color: Colors.black26,
+                                                    blurRadius: 5,
+                                                    spreadRadius: 2,
+                                                  ),
+                                                ]
+                                              : null,
                                           borderRadius:
                                               BorderRadius.circular(6),
                                         ),
@@ -454,8 +485,7 @@ class _FilterScreenState extends State<FilterScreen> {
                                             textAlign: TextAlign.center,
                                             style: kFourteenRegGrayPoppins
                                                 .copyWith(
-                                              color: capName ==
-                                                      _viewModel.selectedCap
+                                              color: cap['selected']
                                                   ? Colors.white
                                                   : AppColors.gray,
                                             ),
@@ -480,7 +510,10 @@ class _FilterScreenState extends State<FilterScreen> {
                           builder: (context, value, child) {
                             return CustomButton(
                                 buttonText: 'Apply Filters',
-                                onTap: _viewModel.isChangesAdded
+                                onTap: _viewModel.isChangesAdded &&
+                                        _viewModel.isAllSectorsSelected &&
+                                        _viewModel.isAllAssetsSelected &&
+                                        _viewModel.isAllCapitalizationSelected
                                     ? () {
                                         _viewModel.toggleIsChangesAdded(false);
                                         Map filterPrefs = {
@@ -490,22 +523,34 @@ class _FilterScreenState extends State<FilterScreen> {
                                               _viewModel.selectedAsset,
                                           'selectedCap': _viewModel.selectedCap,
                                         };
-                                        _userSession.saveFilterPrefs(
-                                            filterPrefs: filterPrefs);
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) {
-                                              return BottomBarMd(
-                                                initialIndex: 1,
-                                                isFilterUpdated: true,
-                                              );
-                                            },
-                                          ),
-                                        );
+                                        debugPrint('filter prefs $filterPrefs');
+                                        debugPrint(
+                                            '_viewModel.isChangesAdded ${_viewModel.isChangesAdded}');
+                                        debugPrint(
+                                            '_viewModel.isAllSectorsSelected ${_viewModel.isAllSectorsSelected}');
+                                        debugPrint(
+                                            '_viewModel.isAllAssetsSelected ${_viewModel.isAllAssetsSelected}');
+                                        debugPrint(
+                                            '_viewModel.isAllCapitalizationSelected ${_viewModel.isAllCapitalizationSelected}');
+                                        // _userSession.saveFilterPrefs(
+                                        //     filterPrefs: filterPrefs);
+                                        // Navigator.push(
+                                        //   context,
+                                        //   MaterialPageRoute(
+                                        //     builder: (context) {
+                                        //       return BottomBarMd(
+                                        //         initialIndex: 1,
+                                        //         isFilterUpdated: true,
+                                        //       );
+                                        //     },
+                                        //   ),
+                                        // );
                                       }
                                     : null,
-                                color: _viewModel.isChangesAdded
+                                color: _viewModel.isChangesAdded &&
+                                        _viewModel.isAllSectorsSelected &&
+                                        _viewModel.isAllAssetsSelected &&
+                                        _viewModel.isAllCapitalizationSelected
                                     ? null
                                     : AppColors.primary.withValues(alpha: 0.5),
                                 borderColor: Colors.transparent);
